@@ -1,12 +1,2022 @@
-"use client";\n\nimport React, { useState, useEffect, useRef } from "react";\nimport Image from "next/image";\nimport {\n  User as UserIcon,\n  Lock,\n  Eye,\n  EyeOff,\n  Save,\n  Key,\n  CheckCheck,\n  Mail,\n  Phone,\n  Camera,\n  ShieldCheck,\n  RefreshCw,\n  Sparkles,\n  Info,\n  Clock,\n  ArrowRight,\n  Fingerprint,\n  Sun,\n  Moon,\n  ShieldAlert,\n  Smartphone,\n  Laptop,\n  Check,\n  AlertTriangle,\n  Award\n} from "lucide-react";\n\n// Types\ninterface User {\n  id?: string;\n  username: string;\n  email?: string;\n  password?: string;\n  avatarUrl: string;\n  category?: string;\n  bio?: string;\n  statusText?: string;\n  email?: string;\n  password?: string;\n}\n\ninterface Message {\n  id: string;\n  sender: string; // username\n  recipient: string; // username\n  text: string;\n  imageUrl?: string; // for image attachments\n  time: string;\n  status?: "sent" | "delivered" | "read";\n  isNew?: boolean;\n}\n\nconst MOCK_POSTS = [\n  "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=400&h=400&q=80",\n  "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=400&h=400&q=80"\n];\n\n// Preset Avatars for registration and mock contacts\nconst PRESET_AVATARS = [\n  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80", // Woman 1\n  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80", // Man 1\n  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80", // Woman 2\n  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80", // Man 2\n  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&h=150&q=80", // Man 3\n  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80"  // Woman 3\n];\n\n// Default built-in mock contacts based on the user's screenshot\nconst MOCK_CONTACTS: User[] = [\n  {\n    id: "mock_ana",\n    username: "Ana Malbasa",\n    email: "ana@example.com",\n    password: "password123",\n    avatarUrl: PRESET_AVATARS[0],\n    category: "PERSONAL BLOG",\n    bio: "Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit. Donec Sit Amet Nunc Augue. Pellentesque Vel Pellentesque Tellus. Nam Lacinia Leo Sed Eleifend Dignissim.",\n    statusText: "Active 5m ago"\n  },\n  {\n    id: "mock_paul",\n    username: "Paul Osmand",\n    email: "paul@example.com",\n    password: "password123",\n    avatarUrl: PRESET_AVATARS[1],\n    category: "CREATIVE DESIGNER",\n    bio: "Passionate about layouts, dark themes, and rich aesthetics. UI developer & animator based in London.",\n    statusText: "hahah, nice!"\n  },\n  {\n    id: "mock_edward",\n    username: "Edward Davis",\n    email: "edward@example.com",\n    password: "password123",\n    avatarUrl: PRESET_AVATARS[4],\n    category: "PHOTOGRAPHER",\n    bio: "Capturing moments and cityscapes. Let's grab coffee and share our logs.",\n    statusText: "Are we still going for a coffee?"\n  },\n  {\n    id: "mock_naomi",\n    username: "Naomi Riste",\n    email: "naomi@example.com",\n    password: "password123",\n    avatarUrl: PRESET_AVATARS[5],\n    category: "WRITER",\n    bio: "Words shape worlds. Blogging, script-writing, and coffee lover.",\n    statusText: "What did your boss say?"\n  },\n  {\n    id: "mock_jonathan",\n    username: "Jonathan Blake",\n    email: "jonathan@example.com",\n    password: "password123",\n    avatarUrl: PRESET_AVATARS[3],\n    category: "ARTIST",\n    bio: "Abstract lines, digital oil paint, and visual animations.",\n    statusText: "Sent you some media"\n  }\n];\n\nconst EMOJI_CATEGORIES = [\n  { name: "Smileys", icon: "😀", list: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "🥵", "🥶", "😱", "😰", "😥", "😓"] },\n  { name: "Love", icon: "❤️", list: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💋", "💌"] },\n  { name: "Hands", icon: "👍", list: ["👍", "👎", "👊", "✊", "🤛", "🤜", "🤞", "✌️", "🤟", "🤘", "👌", "🤏", "👈", "👉", "👆", "👇", "👋", "🤚", "🖐️", "✋", "🙏", "👏", "🙌", "👐"] },\n  { name: "Nature", icon: "🌸", list: ["🐱", "🐶", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐵", "🐒", "🐔", "🐧", "🐦", "🐤", "🦄", "🐝", "🐛", "🦋", "🌸", "🌹", "🍀", "🍁", "🌲", "🔥", "🌈", "☀️", "🌙"] },\n  { name: "Food", icon: "🍕", list: ["🍕", "🍔", "🍟", "🌭", "🍿", "🥞", "🥪", "🥗", "🍣", "🍦", "🍩", "🍪", "🎂", "🍫", "🍬", "🍉", "🍓", "🍇", "🍌", "🍎", "🥑", "☕", "🍺", "🍷"] },\n  { name: "Objects", icon: "🎮", list: ["🎮", "👾", "🎨", "🎬", "🎤", "🎧", "💻", "📱", "📷", "💡", "💰", "💵", "📝", "🔑", "🚗", "✈️", "⚽", "🏀", "🏆", "🎁", "🎉", "🎈"] }\n];\n\nexport default function Home() {\n  // Navigation View State\n  const [currentView, setCurrentView] = useState("chat"); // "chat" or "settings"\n\n  // Settings Theme\n  const [theme, setTheme] = useState<"light" | "dark" | "black">("light"); // "dark", "light", or "black"\n  const isDark = theme === "dark" || theme === "black";\n\n  // Account Detail States\n  const [name, setName] = useState("Om Gadhiya");\n  const [username, setUsername] = useState("om_gadhiya_001");\n  const [email, setEmail] = useState("omgadhiya97@gmail.com");\n  const [phone, setPhone] = useState("+91 97245 67890");\n  const [bio, setBio] = useState("Education | Learning and Building Premium Web Apps 🚀");\n  const [avatar, setAvatar] = useState("/om_gadhiya.png");\n\n  // Password Change States\n  const [currentPassword, setCurrentPassword] = useState("omgadhiya97@123");\n  const [newPassword, setNewPassword] = useState("");\n  const [confirmPassword, setConfirmPassword] = useState("");\n\n  // Show/Hide Password States\n  const [showCurrentPassword, setShowCurrentPassword] = useState(false);\n  const [showNewPassword, setShowNewPassword] = useState(false);\n  const [showConfirmPassword, setShowConfirmPassword] = useState(false);\n\n  // Registration States\n  const [regEmail, setRegEmail] = useState("");\n  const [regPassword, setRegPassword] = useState("");\n  const [showRegPassword, setShowRegPassword] = useState(false);\n\n  // Switch tabs in sidebar\n  const [activeSection, setActiveSection] = useState("profile"); // "profile", "security"\n\n  // 2FA state\n  const [twoFactor, setTwoFactor] = useState(false);\n\n  // Status Alerts\n  const [toast, setToast] = useState<string | null>(null);\n  const [timeString, setTimeString] = useState("");\n\n  // Chat authentication states\n  const [currentUser, setCurrentUser] = useState<User | null>(null);\n  const [authMode, setAuthMode] = useState<"register" | "login">("register");\n  \n  // Registration Form States\n  const [regUsername, setRegUsername] = useState("");\n  const [regEmail, setRegEmail] = useState("");\n  const [regPassword, setRegPassword] = useState("");\n  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(PRESET_AVATARS[0]);\n  const [registeredUsers, setRegisteredUsers] = useState<User[]>(MOCK_CONTACTS);\n\n  // Login Form States\n  const [loginIdentifier, setLoginIdentifier] = useState("");\n  const [loginPassword, setLoginPassword] = useState("");\n\n  // Google Sign-In states\n  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);\n  const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);\n  const [googleCustomEmail, setGoogleCustomEmail] = useState("");\n\n  // Chat window states\n  const [activeContact, setActiveContact] = useState<User | null>(null);\n  const [messages, setMessages] = useState<Message[]>([]);\n  const [inputText, setInputText] = useState("");\n  const [searchQuery, setSearchQuery] = useState("");\n  \n  // Emoji Picker states\n  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);\n  const [activeEmojiCategory, setActiveEmojiCategory] = useState("Smileys");\n  const emojiPickerRef = useRef<HTMLDivElement>(null);\n\n  // Right side panel toggles\n  const [isDetailPaneOpen, setIsDetailPaneOpen] = useState(true);\n\n  // Online statuses & typing indicator tracking\n  const [onlineUsers, setOnlineUsers] = useState<Record<string, "online" | "away" | "offline">>({\n    "Ana Malbasa": "online",\n    "Paul Osmand": "online",\n    "Edward Davis": "online",\n    "Naomi Riste": "away",\n    "Jonathan Blake": "offline"\n  });\n  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});\n\n  // References\n  const messagesEndRef = useRef<HTMLDivElement>(null);\n  const channelRef = useRef<BroadcastChannel | null>(null);\n  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});\n  const myTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);\n\n  // Time state update for Chat\n  const [currentTime, setCurrentTime] = useState("12:37");\n\n  // Synchronized Clock Loop\n  useEffect(() => {\n    const updateTime = () => {\n      const date = new Date();\n      setTimeString(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));\n      \n      let hours = date.getHours();\n      const minutes = date.getMinutes().toString().padStart(2, "0");\n      hours = hours % 12;\n      hours = hours ? hours : 12;\n      setCurrentTime(`${hours}:${minutes}`);\n    };\n    updateTime();\n    const interval = setInterval(updateTime, 60000);\n    return () => clearInterval(interval);\n  }, []);\n\n  // Click outside to close emoji picker\n  useEffect(() => {\n    const handleClickOutside = (e: MouseEvent) => {\n      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {\n        setIsEmojiPickerOpen(false);\n      }\n    };\n    document.addEventListener("mousedown", handleClickOutside);\n    return () => document.removeEventListener("mousedown", handleClickOutside);\n  }, []);\n\n  // Audio system triggers\n  const playSound = (type: "send" | "receive") => {\n    try {\n      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;\n      if (!AudioContextClass) return;\n      const ctx = new AudioContextClass();\n      \n      if (type === "send") {\n        const osc = ctx.createOscillator();\n        const gain = ctx.createGain();\n        osc.type = "sine";\n        osc.frequency.setValueAtTime(600, ctx.currentTime);\n        osc.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 0.07);\n        gain.gain.setValueAtTime(0.06, ctx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.07);\n        osc.connect(gain);\n        gain.connect(ctx.destination);\n        osc.start();\n        osc.stop(ctx.currentTime + 0.07);\n      } else {\n        const osc = ctx.createOscillator();\n        const gain = ctx.createGain();\n        osc.type = "sine";\n        osc.frequency.setValueAtTime(620, ctx.currentTime);\n        osc.frequency.setValueAtTime(740, ctx.currentTime + 0.06);\n        gain.gain.setValueAtTime(0.06, ctx.currentTime);\n        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);\n        osc.connect(gain);\n        gain.connect(ctx.destination);\n        osc.start();\n        osc.stop(ctx.currentTime + 0.15);\n      }\n    } catch (e) {\n      console.warn("Audio Context blocked by browser", e);\n    }\n  };\n\n  // 1. Initial Load from Local Cache\n  useEffect(() => {\n    // Load persisted theme\n    const savedTheme = localStorage.getItem("chatgroup_theme") as "light" | "dark" | "black" | null;\n    if (savedTheme) {\n      setTheme(savedTheme);\n    }\n\n    const savedUser = localStorage.getItem("chatgroup_current_user");\n    if (savedUser) {\n      const parsed = JSON.parse(savedUser);\n      \n      // Auto-fallback: if the stored avatar URL is a stale browser blob URL, default to "/om_gadhiya.png"\n      let sanitizedAvatar = parsed.avatarUrl || "/om_gadhiya.png";\n      if (sanitizedAvatar.startsWith("blob:")) {\n        sanitizedAvatar = "/om_gadhiya.png";\n        parsed.avatarUrl = sanitizedAvatar;\n        localStorage.setItem("chatgroup_current_user", JSON.stringify(parsed));\n      }\n\n      setCurrentUser(parsed);\n      \n      // Sync settings dashboard states with current user profile\n      setName(parsed.username);\n      setUsername(parsed.username);\n      setBio(parsed.bio || "Available to chat in real-time.");\n      setAvatar(sanitizedAvatar);\n      setEmail(parsed.email || "your.email@domain.com");\n      setCurrentPassword(parsed.password || "omgadhiya97@123");\n    }\n\n    const savedUsersList = localStorage.getItem("chatgroup_registered_users");\n    if (savedUsersList) {\n      const parsed = JSON.parse(savedUsersList) as User[];\n      const combined = [...MOCK_CONTACTS];\n      parsed.forEach((u) => {\n        if (!combined.some((c) => c.username.toLowerCase() === u.username.toLowerCase())) {\n          // Sanitize blob URLs for other registered users\n          if (u.avatarUrl && u.avatarUrl.startsWith("blob:")) {\n            u.avatarUrl = PRESET_AVATARS[0];\n          }\n          combined.push(u);\n        }\n      });\n      setRegisteredUsers(combined);\n      localStorage.setItem(\n        "chatgroup_registered_users",\n        JSON.stringify(combined.filter((u) => !MOCK_CONTACTS.some((mc) => mc.username === u.username)))\n      );\n    } else {\n      localStorage.setItem("chatgroup_registered_users", JSON.stringify(MOCK_CONTACTS));\n    }\n\n    const savedMessages = localStorage.getItem("chatgroup_messages");\n    if (savedMessages) {\n      setMessages(JSON.parse(savedMessages));\n    } else {\n      const defaultHistory: Message[] = [\n        { id: "h1", sender: "Ana Malbasa", recipient: "Ann", text: "Cool! Don't forget to bring your ice skaters unless you want theirs!", time: "07:43 AM" },\n        { id: "h2", sender: "Ann", recipient: "Ana Malbasa", text: "I wish I don't have those bad boys anymore, will use theirs.", time: "07:43 AM", status: "read" },\n        { id: "h3", sender: "Ana Malbasa", recipient: "Ann", text: "It's all good! It will go back quick. :)", time: "08:00 AM" },\n        { id: "h4", sender: "Ann", recipient: "Ana Malbasa", text: "", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80", time: "08:00 AM", status: "read" },\n        { id: "h5", sender: "Ann", recipient: "Ana Malbasa", text: "Wow! where did you snap that? Looks really nice!", time: "08:04 AM", status: "read" }\n      ];\n      setMessages(defaultHistory);\n      localStorage.setItem("chatgroup_messages", JSON.stringify(defaultHistory));\n    }\n\n    setActiveContact(MOCK_CONTACTS[0]);\n  }, []);\n\n  // Save theme changes to Local Cache\n  useEffect(() => {\n    localStorage.setItem("chatgroup_theme", theme);\n  }, [theme]);\n\n  // 2. Setup BroadcastChannel for Real-time synchronizations\n  useEffect(() => {\n    if (!currentUser) return;\n\n    const channel = new BroadcastChannel("chatgroup_realtime");\n    channelRef.current = channel;\n\n    const sendHeartbeat = () => {\n      channel.postMessage({\n        type: "HEARTBEAT",\n        username: currentUser.username,\n        avatarUrl: currentUser.avatarUrl\n      });\n    };\n    sendHeartbeat();\n    const heartbeatInterval = setInterval(sendHeartbeat, 3000);\n\n    const onlineTimerMap: Record<string, NodeJS.Timeout> = {};\n\n    channel.onmessage = (event) => {\n      const data = event.data;\n      if (!data) return;\n\n      switch (data.type) {\n        case "HEARTBEAT":\n          setOnlineUsers((prev) => ({ ...prev, [data.username]: "online" }));\n          \n          if (onlineTimerMap[data.username]) {\n            clearTimeout(onlineTimerMap[data.username]);\n          }\n          onlineTimerMap[data.username] = setTimeout(() => {\n            setOnlineUsers((prev) => ({ ...prev, [data.username]: "offline" }));\n          }, 8000);\n\n          setRegisteredUsers((prev) => {\n            if (prev.some((u) => u.username.toLowerCase() === data.username.toLowerCase())) {\n              // Update user avatar/info if it changes in settings\n              return prev.map(u => u.username.toLowerCase() === data.username.toLowerCase() ? { ...u, avatarUrl: data.avatarUrl } : u);\n            }\n            const newList = [...prev, { username: data.username, avatarUrl: data.avatarUrl, category: "MEMBER", bio: "Available to chat in real-time." }];\n            localStorage.setItem("chatgroup_registered_users", JSON.stringify(newList));\n            return newList;\n          });\n          break;\n\n        case "USER_REGISTER":\n          setRegisteredUsers((prev) => {\n            const index = prev.findIndex(u => u.username.toLowerCase() === data.user.username.toLowerCase());\n            let newList = [...prev];\n            if (index > -1) {\n              newList[index] = data.user;\n            } else {\n              newList.push(data.user);\n            }\n            localStorage.setItem("chatgroup_registered_users", JSON.stringify(newList));\n            return newList;\n          });\n          setOnlineUsers((prev) => ({ ...prev, [data.user.username]: "online" }));\n          break;\n\n        case "MSG":\n          if (data.to === currentUser.username || data.from === currentUser.username) {\n            const newMsg: Message = data.msg;\n            setMessages((prev) => {\n              if (prev.some((m) => m.id === newMsg.id)) return prev;\n              const nextMsgs = [...prev, newMsg];\n              localStorage.setItem("chatgroup_messages", JSON.stringify(nextMsgs));\n              return nextMsgs;\n            });\n            \n            if (data.from !== currentUser.username) {\n              playSound("receive");\n              if (activeContact && activeContact.username === data.from) {\n                channel.postMessage({\n                  type: "READ_RECEIPT",\n                  msgId: newMsg.id,\n                  reader: currentUser.username,\n                  sender: data.from\n                });\n              }\n            }\n            setTimeout(() => scrollToBottom("smooth"), 50);\n          }\n          break;\n\n        case "READ_RECEIPT":\n          if (data.sender === currentUser.username) {\n            setMessages((prev) =>\n              prev.map((msg) =>\n                msg.id === data.msgId ? { ...msg, status: "read" } : msg\n              )\n            );\n          }\n          break;\n\n        case "TYPING":\n          if (data.to === currentUser.username) {\n            setTypingUsers((prev) => ({ ...prev, [data.from]: data.isTyping }));\n            \n            if (data.isTyping) {\n              if (typingTimeoutRef.current[data.from]) {\n                clearTimeout(typingTimeoutRef.current[data.from]);\n              }\n              typingTimeoutRef.current[data.from] = setTimeout(() => {\n                setTypingUsers((prev) => ({ ...prev, [data.from]: false }));\n              }, 4000);\n            }\n          }\n          break;\n\n        default:\n          break;\n      }\n    };\n\n    return () => {\n      clearInterval(heartbeatInterval);\n      channel.close();\n      Object.values(onlineTimerMap).forEach(clearTimeout);\n    };\n  }, [currentUser, activeContact]);\n\n  // Handle local user keystroke relays for typing animations\n  const handleUserTyping = (textLength: number) => {\n    if (!channelRef.current || !currentUser || !activeContact) return;\n\n    channelRef.current.postMessage({\n      type: "TYPING",\n      from: currentUser.username,\n      to: activeContact.username,\n      isTyping: textLength > 0\n    });\n\n    if (myTypingTimeoutRef.current) {\n      clearTimeout(myTypingTimeoutRef.current);\n    }\n\n    if (textLength > 0) {\n      myTypingTimeoutRef.current = setTimeout(() => {\n        if (channelRef.current && currentUser && activeContact) {\n          channelRef.current.postMessage({\n            type: "TYPING",\n            from: currentUser.username,\n            to: activeContact.username,\n            isTyping: false\n          });\n        }\n      }, 2500);\n    }\n  };\n\n  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {\n    messagesEndRef.current?.scrollIntoView({ behavior });\n  };\n\n  // Submit registration form\n  const handleRegister = (e: React.FormEvent) => {\n    e.preventDefault();\n    if (!regUsername.trim() || !regEmail.trim() || !regPassword.trim()) {
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import {
+  User as UserIcon,
+  Lock,
+  Eye,
+  EyeOff,
+  Save,
+  Key,
+  CheckCheck,
+  Mail,
+  Phone,
+  Camera,
+  ShieldCheck,
+  RefreshCw,
+  Sparkles,
+  Info,
+  Clock,
+  ArrowRight,
+  Fingerprint,
+  Sun,
+  Moon,
+  ShieldAlert,
+  Smartphone,
+  Laptop,
+  Check,
+  AlertTriangle,
+  Award
+} from "lucide-react";
+
+// Types
+interface User {
+  id?: string;
+  username: string;
+  email?: string;
+  password?: string;
+  avatarUrl: string;
+  category?: string;
+  bio?: string;
+  statusText?: string;
+  email?: string;
+  password?: string;
+}
+
+interface Message {
+  id: string;
+  sender: string; // username
+  recipient: string; // username
+  text: string;
+  imageUrl?: string; // for image attachments
+  time: string;
+  status?: "sent" | "delivered" | "read";
+  isNew?: boolean;
+}
+
+const MOCK_POSTS = [
+  "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=400&h=400&q=80",
+  "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=400&h=400&q=80"
+];
+
+// Preset Avatars for registration and mock contacts
+const PRESET_AVATARS = [
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80", // Woman 1
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80", // Man 1
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80", // Woman 2
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80", // Man 2
+  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&h=150&q=80", // Man 3
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80"  // Woman 3
+];
+
+// Default built-in mock contacts based on the user's screenshot
+const MOCK_CONTACTS: User[] = [
+  {
+    id: "mock_ana",
+    username: "Ana Malbasa",
+    email: "ana@example.com",
+    password: "password123",
+    avatarUrl: PRESET_AVATARS[0],
+    category: "PERSONAL BLOG",
+    bio: "Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit. Donec Sit Amet Nunc Augue. Pellentesque Vel Pellentesque Tellus. Nam Lacinia Leo Sed Eleifend Dignissim.",
+    statusText: "Active 5m ago"
+  },
+  {
+    id: "mock_paul",
+    username: "Paul Osmand",
+    email: "paul@example.com",
+    password: "password123",
+    avatarUrl: PRESET_AVATARS[1],
+    category: "CREATIVE DESIGNER",
+    bio: "Passionate about layouts, dark themes, and rich aesthetics. UI developer & animator based in London.",
+    statusText: "hahah, nice!"
+  },
+  {
+    id: "mock_edward",
+    username: "Edward Davis",
+    email: "edward@example.com",
+    password: "password123",
+    avatarUrl: PRESET_AVATARS[4],
+    category: "PHOTOGRAPHER",
+    bio: "Capturing moments and cityscapes. Let's grab coffee and share our logs.",
+    statusText: "Are we still going for a coffee?"
+  },
+  {
+    id: "mock_naomi",
+    username: "Naomi Riste",
+    email: "naomi@example.com",
+    password: "password123",
+    avatarUrl: PRESET_AVATARS[5],
+    category: "WRITER",
+    bio: "Words shape worlds. Blogging, script-writing, and coffee lover.",
+    statusText: "What did your boss say?"
+  },
+  {
+    id: "mock_jonathan",
+    username: "Jonathan Blake",
+    email: "jonathan@example.com",
+    password: "password123",
+    avatarUrl: PRESET_AVATARS[3],
+    category: "ARTIST",
+    bio: "Abstract lines, digital oil paint, and visual animations.",
+    statusText: "Sent you some media"
+  }
+];
+
+const EMOJI_CATEGORIES = [
+  { name: "Smileys", icon: "😀", list: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "🥵", "🥶", "😱", "😰", "😥", "😓"] },
+  { name: "Love", icon: "❤️", list: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💋", "💌"] },
+  { name: "Hands", icon: "👍", list: ["👍", "👎", "👊", "✊", "🤛", "🤜", "🤞", "✌️", "🤟", "🤘", "👌", "🤏", "👈", "👉", "👆", "👇", "👋", "🤚", "🖐️", "✋", "🙏", "👏", "🙌", "👐"] },
+  { name: "Nature", icon: "🌸", list: ["🐱", "🐶", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐵", "🐒", "🐔", "🐧", "🐦", "🐤", "🦄", "🐝", "🐛", "🦋", "🌸", "🌹", "🍀", "🍁", "🌲", "🔥", "🌈", "☀️", "🌙"] },
+  { name: "Food", icon: "🍕", list: ["🍕", "🍔", "🍟", "🌭", "🍿", "🥞", "🥪", "🥗", "🍣", "🍦", "🍩", "🍪", "🎂", "🍫", "🍬", "🍉", "🍓", "🍇", "🍌", "🍎", "🥑", "☕", "🍺", "🍷"] },
+  { name: "Objects", icon: "🎮", list: ["🎮", "👾", "🎨", "🎬", "🎤", "🎧", "💻", "📱", "📷", "💡", "💰", "💵", "📝", "🔑", "🚗", "✈️", "⚽", "🏀", "🏆", "🎁", "🎉", "🎈"] }
+];
+
+export default function Home() {
+  // Navigation View State
+  const [currentView, setCurrentView] = useState("chat"); // "chat" or "settings"
+
+  // Settings Theme
+  const [theme, setTheme] = useState<"light" | "dark" | "black">("light"); // "dark", "light", or "black"
+  const isDark = theme === "dark" || theme === "black";
+
+  // Account Detail States
+  const [name, setName] = useState("Om Gadhiya");
+  const [username, setUsername] = useState("om_gadhiya_001");
+  const [email, setEmail] = useState("omgadhiya97@gmail.com");
+  const [phone, setPhone] = useState("+91 97245 67890");
+  const [bio, setBio] = useState("Education | Learning and Building Premium Web Apps 🚀");
+  const [avatar, setAvatar] = useState("/om_gadhiya.png");
+
+  // Password Change States
+  const [currentPassword, setCurrentPassword] = useState("omgadhiya97@123");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Show/Hide Password States
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Registration States
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Switch tabs in sidebar
+  const [activeSection, setActiveSection] = useState("profile"); // "profile", "security"
+
+  // 2FA state
+  const [twoFactor, setTwoFactor] = useState(false);
+
+  // Status Alerts
+  const [toast, setToast] = useState<string | null>(null);
+  const [timeString, setTimeString] = useState("");
+
+  // Chat authentication states
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  
+  // Registration Form States
+  const [regUsername, setRegUsername] = useState("");
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(PRESET_AVATARS[0]);
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>(MOCK_CONTACTS);
+
+  // Login Form States
+  const [loginIdentifier, setLoginIdentifier] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Google Sign-In states
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
+  const [googleCustomEmail, setGoogleCustomEmail] = useState("");
+
+  // Chat window states
+  const [activeContact, setActiveContact] = useState<User | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Emoji Picker states
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState("Smileys");
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  // Right side panel toggles
+  const [isDetailPaneOpen, setIsDetailPaneOpen] = useState(true);
+
+  // Online statuses & typing indicator tracking
+  const [onlineUsers, setOnlineUsers] = useState<Record<string, "online" | "away" | "offline">>({
+    "Ana Malbasa": "online",
+    "Paul Osmand": "online",
+    "Edward Davis": "online",
+    "Naomi Riste": "away",
+    "Jonathan Blake": "offline"
+  });
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+
+  // References
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const myTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Time state update for Chat
+  const [currentTime, setCurrentTime] = useState("12:37");
+
+  // Synchronized Clock Loop
+  useEffect(() => {
+    const updateTime = () => {
+      const date = new Date();
+      setTimeString(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      
+      let hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      setCurrentTime(`${hours}:${minutes}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Click outside to close emoji picker
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setIsEmojiPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Audio system triggers
+  const playSound = (type: "send" | "receive") => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      if (type === "send") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 0.07);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.07);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.07);
+      } else {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(620, ctx.currentTime);
+        osc.frequency.setValueAtTime(740, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      }
+    } catch (e) {
+      console.warn("Audio Context blocked by browser", e);
+    }
+  };
+
+  // 1. Initial Load from Local Cache
+  useEffect(() => {
+    // Load persisted theme
+    const savedTheme = localStorage.getItem("chatgroup_theme") as "light" | "dark" | "black" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+
+    const savedUser = localStorage.getItem("chatgroup_current_user");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      
+      // Auto-fallback: if the stored avatar URL is a stale browser blob URL, default to "/om_gadhiya.png"
+      let sanitizedAvatar = parsed.avatarUrl || "/om_gadhiya.png";
+      if (sanitizedAvatar.startsWith("blob:")) {
+        sanitizedAvatar = "/om_gadhiya.png";
+        parsed.avatarUrl = sanitizedAvatar;
+        localStorage.setItem("chatgroup_current_user", JSON.stringify(parsed));
+      }
+
+      setCurrentUser(parsed);
+      
+      // Sync settings dashboard states with current user profile
+      setName(parsed.username);
+      setUsername(parsed.username);
+      setBio(parsed.bio || "Available to chat in real-time.");
+      setAvatar(sanitizedAvatar);
+      setEmail(parsed.email || "your.email@domain.com");
+      setCurrentPassword(parsed.password || "omgadhiya97@123");
+    }
+
+    const savedUsersList = localStorage.getItem("chatgroup_registered_users");
+    if (savedUsersList) {
+      const parsed = JSON.parse(savedUsersList) as User[];
+      const combined = [...MOCK_CONTACTS];
+      parsed.forEach((u) => {
+        if (!combined.some((c) => c.username.toLowerCase() === u.username.toLowerCase())) {
+          // Sanitize blob URLs for other registered users
+          if (u.avatarUrl && u.avatarUrl.startsWith("blob:")) {
+            u.avatarUrl = PRESET_AVATARS[0];
+          }
+          combined.push(u);
+        }
+      });
+      setRegisteredUsers(combined);
+      localStorage.setItem(
+        "chatgroup_registered_users",
+        JSON.stringify(combined.filter((u) => !MOCK_CONTACTS.some((mc) => mc.username === u.username)))
+      );
+    } else {
+      localStorage.setItem("chatgroup_registered_users", JSON.stringify(MOCK_CONTACTS));
+    }
+
+    const savedMessages = localStorage.getItem("chatgroup_messages");
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    } else {
+      const defaultHistory: Message[] = [
+        { id: "h1", sender: "Ana Malbasa", recipient: "Ann", text: "Cool! Don't forget to bring your ice skaters unless you want theirs!", time: "07:43 AM" },
+        { id: "h2", sender: "Ann", recipient: "Ana Malbasa", text: "I wish I don't have those bad boys anymore, will use theirs.", time: "07:43 AM", status: "read" },
+        { id: "h3", sender: "Ana Malbasa", recipient: "Ann", text: "It's all good! It will go back quick. :)", time: "08:00 AM" },
+        { id: "h4", sender: "Ann", recipient: "Ana Malbasa", text: "", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80", time: "08:00 AM", status: "read" },
+        { id: "h5", sender: "Ann", recipient: "Ana Malbasa", text: "Wow! where did you snap that? Looks really nice!", time: "08:04 AM", status: "read" }
+      ];
+      setMessages(defaultHistory);
+      localStorage.setItem("chatgroup_messages", JSON.stringify(defaultHistory));
+    }
+
+    setActiveContact(MOCK_CONTACTS[0]);
+  }, []);
+
+  // Save theme changes to Local Cache
+  useEffect(() => {
+    localStorage.setItem("chatgroup_theme", theme);
+  }, [theme]);
+
+  // 2. Setup BroadcastChannel for Real-time synchronizations
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = new BroadcastChannel("chatgroup_realtime");
+    channelRef.current = channel;
+
+    const sendHeartbeat = () => {
+      channel.postMessage({
+        type: "HEARTBEAT",
+        username: currentUser.username,
+        avatarUrl: currentUser.avatarUrl
+      });
+    };
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(sendHeartbeat, 3000);
+
+    const onlineTimerMap: Record<string, NodeJS.Timeout> = {};
+
+    channel.onmessage = (event) => {
+      const data = event.data;
+      if (!data) return;
+
+      switch (data.type) {
+        case "HEARTBEAT":
+          setOnlineUsers((prev) => ({ ...prev, [data.username]: "online" }));
+          
+          if (onlineTimerMap[data.username]) {
+            clearTimeout(onlineTimerMap[data.username]);
+          }
+          onlineTimerMap[data.username] = setTimeout(() => {
+            setOnlineUsers((prev) => ({ ...prev, [data.username]: "offline" }));
+          }, 8000);
+
+          setRegisteredUsers((prev) => {
+            if (prev.some((u) => u.username.toLowerCase() === data.username.toLowerCase())) {
+              // Update user avatar/info if it changes in settings
+              return prev.map(u => u.username.toLowerCase() === data.username.toLowerCase() ? { ...u, avatarUrl: data.avatarUrl } : u);
+            }
+            const newList = [...prev, { username: data.username, avatarUrl: data.avatarUrl, category: "MEMBER", bio: "Available to chat in real-time." }];
+            localStorage.setItem("chatgroup_registered_users", JSON.stringify(newList));
+            return newList;
+          });
+          break;
+
+        case "USER_REGISTER":
+          setRegisteredUsers((prev) => {
+            const index = prev.findIndex(u => u.username.toLowerCase() === data.user.username.toLowerCase());
+            let newList = [...prev];
+            if (index > -1) {
+              newList[index] = data.user;
+            } else {
+              newList.push(data.user);
+            }
+            localStorage.setItem("chatgroup_registered_users", JSON.stringify(newList));
+            return newList;
+          });
+          setOnlineUsers((prev) => ({ ...prev, [data.user.username]: "online" }));
+          break;
+
+        case "MSG":
+          if (data.to === currentUser.username || data.from === currentUser.username) {
+            const newMsg: Message = data.msg;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              const nextMsgs = [...prev, newMsg];
+              localStorage.setItem("chatgroup_messages", JSON.stringify(nextMsgs));
+              return nextMsgs;
+            });
+            
+            if (data.from !== currentUser.username) {
+              playSound("receive");
+              if (activeContact && activeContact.username === data.from) {
+                channel.postMessage({
+                  type: "READ_RECEIPT",
+                  msgId: newMsg.id,
+                  reader: currentUser.username,
+                  sender: data.from
+                });
+              }
+            }
+            setTimeout(() => scrollToBottom("smooth"), 50);
+          }
+          break;
+
+        case "READ_RECEIPT":
+          if (data.sender === currentUser.username) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === data.msgId ? { ...msg, status: "read" } : msg
+              )
+            );
+          }
+          break;
+
+        case "TYPING":
+          if (data.to === currentUser.username) {
+            setTypingUsers((prev) => ({ ...prev, [data.from]: data.isTyping }));
+            
+            if (data.isTyping) {
+              if (typingTimeoutRef.current[data.from]) {
+                clearTimeout(typingTimeoutRef.current[data.from]);
+              }
+              typingTimeoutRef.current[data.from] = setTimeout(() => {
+                setTypingUsers((prev) => ({ ...prev, [data.from]: false }));
+              }, 4000);
+            }
+          }
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      channel.close();
+      Object.values(onlineTimerMap).forEach(clearTimeout);
+    };
+  }, [currentUser, activeContact]);
+
+  // Handle local user keystroke relays for typing animations
+  const handleUserTyping = (textLength: number) => {
+    if (!channelRef.current || !currentUser || !activeContact) return;
+
+    channelRef.current.postMessage({
+      type: "TYPING",
+      from: currentUser.username,
+      to: activeContact.username,
+      isTyping: textLength > 0
+    });
+
+    if (myTypingTimeoutRef.current) {
+      clearTimeout(myTypingTimeoutRef.current);
+    }
+
+    if (textLength > 0) {
+      myTypingTimeoutRef.current = setTimeout(() => {
+        if (channelRef.current && currentUser && activeContact) {
+          channelRef.current.postMessage({
+            type: "TYPING",
+            from: currentUser.username,
+            to: activeContact.username,
+            isTyping: false
+          });
+        }
+      }, 2500);
+    }
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Submit registration form
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regUsername.trim() || !regEmail.trim() || !regPassword.trim()) {
       setToast("Please fill in all registration fields! ❌");
       setTimeout(() => setToast(null), 3000);
       return;
-    }\n\n    const newUser: User = {\n      id: "u_" + Math.random().toString(36).substr(2, 9),\n      username: regUsername.trim(),\n      email: regEmail.trim().toLowerCase(),\n      password: regPassword,\n      avatarUrl: selectedAvatarUrl,\n      category: "MEMBER",\n      bio: "Joined ChatGroup. Let's communicate in real-time.",\n      email: regEmail.trim(),\n      password: regPassword\n    };\n\n    // Check if duplicate of exact (username, email, password) already exists\n    const duplicate = registeredUsers.some(\n      (u) =>\n        u.username.toLowerCase() === newUser.username.toLowerCase() &&\n        u.email?.toLowerCase() === newUser.email?.toLowerCase() &&\n        u.password === newUser.password\n    );\n\n    if (duplicate) {\n      setToast("An account with this username, email and password already exists! ❌");\n      setTimeout(() => setToast(null), 3000);\n      return;\n    }\n\n    setCurrentUser(newUser);\n    localStorage.setItem("chatgroup_current_user", JSON.stringify(newUser));\n\n    // Sync settings dashboard profiles\n    setName(newUser.username);\n    setUsername(newUser.username.toLowerCase().replace(/\s+/g, "_"));\n    setAvatar(newUser.avatarUrl);\n    setBio(newUser.bio || "");\n    setEmail(newUser.email || "");\n    setCurrentPassword(newUser.password || "");\n\n    setRegisteredUsers((prev) => {\n      const nextList = [...prev, newUser];\n      localStorage.setItem("chatgroup_registered_users", JSON.stringify(nextList));\n      return nextList;\n    });\n\n    const channel = new BroadcastChannel("chatgroup_realtime");\n    channel.postMessage({\n      type: "USER_REGISTER",\n      user: newUser\n    });\n    channel.close();\n\n    setToast("Account registered successfully! Welcome. 🎉");\n    setTimeout(() => setToast(null), 3000);\n\n    // Clear registration fields\n    setRegUsername("");\n    setRegEmail("");\n    setRegPassword("");\n  };\n\n  // Submit login form\n  const handleLogin = (e: React.FormEvent) => {\n    e.preventDefault();\n    if (!loginIdentifier.trim() || !loginPassword) {\n      setToast("Please fill in all login fields! ❌");\n      setTimeout(() => setToast(null), 3000);\n      return;\n    }\n\n    const identifier = loginIdentifier.trim().toLowerCase();\n\n    // Query registeredUsers for an account with matching (username OR email) AND matching password\n    const matchedUser = registeredUsers.find(\n      (u) =>\n        (u.username.toLowerCase() === identifier || u.email?.toLowerCase() === identifier) &&\n        u.password === loginPassword\n    );\n\n    if (matchedUser) {\n      setCurrentUser(matchedUser);\n      localStorage.setItem("chatgroup_current_user", JSON.stringify(matchedUser));\n\n      // Sync settings dashboard profiles\n      setName(matchedUser.username);\n      setUsername(matchedUser.username.toLowerCase().replace(/\s+/g, "_"));\n      setAvatar(matchedUser.avatarUrl);\n      setBio(matchedUser.bio || "");\n      if (matchedUser.email) setEmail(matchedUser.email);\n      if (matchedUser.password) setCurrentPassword(matchedUser.password);\n\n      setToast(`Logged in as ${matchedUser.username}! Welcome back. 👋`);\n      setTimeout(() => setToast(null), 3000);\n\n      // Clear login fields\n      setLoginIdentifier("");\n      setLoginPassword("");\n    } else {\n      setToast("Invalid username/email or password! ❌");\n      setTimeout(() => setToast(null), 3000);\n    }\n  };\n\n  // Google ID Sign-in handler\n  const handleGoogleSignIn = (gUsername: string, emailStr: string, avatarUrlStr: string) => {\n    setIsSigningInWithGoogle(true);\n\n    // Simulate minor network delay for OAuth realism\n    setTimeout(() => {\n      const newUser: User = {\n        id: "google_" + Math.random().toString(36).substr(2, 9),\n        username: gUsername.trim(),\n        email: emailStr,\n        password: "google_oauth",\n        avatarUrl: avatarUrlStr,\n        category: "MEMBER",\n        bio: `Logged in via Google (${emailStr}).`\n      };\n\n      setCurrentUser(newUser);\n      localStorage.setItem("chatgroup_current_user", JSON.stringify(newUser));\n\n      // Sync settings dashboard profiles\n      setName(newUser.username);\n      setUsername(newUser.username.toLowerCase().replace(/\s+/g, "_"));\n      setAvatar(newUser.avatarUrl);\n      setBio(newUser.bio || "");\n      setEmail(emailStr);\n      setCurrentPassword("google_oauth");\n\n      setRegisteredUsers((prev) => {\n        const exists = prev.some((u) => u.username.toLowerCase() === newUser.username.toLowerCase() && u.email?.toLowerCase() === emailStr.toLowerCase());\n        if (exists) return prev;\n        const nextList = [...prev, newUser];\n        localStorage.setItem("chatgroup_registered_users", JSON.stringify(nextList));\n        return nextList;\n      });\n\n      const channel = new BroadcastChannel("chatgroup_realtime");\n      channel.postMessage({\n        type: "USER_REGISTER",\n        user: newUser\n      });\n      channel.close();\n\n      setIsSigningInWithGoogle(false);\n      setIsGoogleModalOpen(false);\n\n      // Trigger success toast\n      setToast("Signed in with Google successfully! 🛡️");\n      setTimeout(() => setToast(null), 3000);\n    }, 1200);\n  };\n\n  // Send message submit\n  const handleSendMessage = (textToSend = inputText, imageLink?: string) => {\n    const textContent = textToSend.trim();\n    if (!textContent && !imageLink) return;\n    if (!currentUser || !activeContact) return;\n\n    const timeStringVal = new Date().toLocaleTimeString([], {\n      hour: "2-digit",\n      minute: "2-digit"\n    });\n\n    const newMsg: Message = {\n      id: Math.random().toString(36).substring(2, 9),\n      sender: currentUser.username,\n      recipient: activeContact.username,\n      text: textContent,\n      imageUrl: imageLink,\n      time: timeStringVal,\n      status: "sent",\n      isNew: true\n    };\n\n    setMessages((prev) => {\n      const nextMsgs = [...prev, newMsg];\n      localStorage.setItem("chatgroup_messages", JSON.stringify(nextMsgs));\n      return nextMsgs;\n    });\n\n    setInputText("");\n    playSound("send");\n    setTimeout(() => scrollToBottom("smooth"), 50);\n\n    if (myTypingTimeoutRef.current) {\n      clearTimeout(myTypingTimeoutRef.current);\n    }\n    if (channelRef.current) {\n      channelRef.current.postMessage({\n        type: "TYPING",\n        from: currentUser.username,\n        to: activeContact.username,\n        isTyping: false\n      });\n      channelRef.current.postMessage({\n        type: "MSG",\n        msg: newMsg,\n        from: currentUser.username,\n        to: activeContact.username\n      });\n    }\n\n    setTimeout(() => {\n      setMessages((prev) =>\n        prev.map((msg) =>\n          msg.id === newMsg.id ? { ...msg, status: "delivered" } : msg\n        )\n      );\n    }, 1000);\n\n    const isMock = MOCK_CONTACTS.some((c) => c.username === activeContact.username);\n    const isOffline = onlineUsers[activeContact.username] === "offline" || !onlineUsers[activeContact.username];\n    if (isMock && isOffline) {\n      triggerMockResponse(activeContact.username);\n    }\n  };\n\n  // Simulated responses for offline directory contacts\n  const triggerMockResponse = (contactName: string) => {\n    setTimeout(() => {\n      setTypingUsers((prev) => ({ ...prev, [contactName]: true }));\n      setTimeout(() => scrollToBottom("smooth"), 50);\n\n      setTimeout(() => {\n        const replies = [\n          "Cool! I'll double check my schedules.",\n          "Awesome. Send me the media logs when you've got them.",\n          "It's a gorgeous photo, where was it taken?",\n          "Sure thing, talk to you later tonight!",\n          "Yes! Let's get together soon."\n        ];\n        const text = replies[Math.floor(Math.random() * replies.length)];\n        const timeStringVal = new Date().toLocaleTimeString([], {\n          hour: "2-digit",\n          minute: "2-digit"\n        });\n\n        const replyMessage: Message = {\n          id: Math.random().toString(36).substring(2, 9),\n          sender: contactName,\n          recipient: currentUser?.username || "Ann",\n          text,\n          time: timeStringVal,\n          isNew: true\n        };\n\n        setMessages((prev) => {\n          const next = [...prev, replyMessage];\n          localStorage.setItem("chatgroup_messages", JSON.stringify(next));\n          return next;\n        });\n\n        setTypingUsers((prev) => ({ ...prev, [contactName]: false }));\n        playSound("receive");\n        setTimeout(() => scrollToBottom("smooth"), 50);\n      }, 2000);\n    }, 1500);\n  };\n\n  // Mock attachment click: triggers a gorgeous nature photography message send\n  const handleSendMockImage = () => {\n    if (!currentUser || !activeContact) return;\n    const mockImageUrls = [\n      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&q=80",\n      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=400&q=80",\n      "https://images.unsplash.com/photo-1472214222555-d404758b1c42?auto=format&fit=crop&w=400&q=80"\n    ];\n    const chosenImage = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];\n    handleSendMessage("", chosenImage);\n  };\n\n  const handleLogout = () => {\n    setCurrentUser(null);\n    setActiveContact(MOCK_CONTACTS[0]);\n    localStorage.removeItem("chatgroup_current_user");\n  };\n\n  // Filters messages for selected user\n  const conversationMessages = messages.filter(\n    (msg) =>\n      currentUser &&\n      activeContact &&\n      ((msg.sender === currentUser.username && msg.recipient === activeContact.username) ||\n        (msg.sender === activeContact.username && msg.recipient === currentUser.username))\n  );\n\n  // Filters contacts list for sidebar search\n  const filteredContacts = registeredUsers.filter(\n    (u) =>\n      currentUser &&\n      u.username.toLowerCase() !== currentUser.username.toLowerCase() &&\n      u.username.toLowerCase().includes(searchQuery.toLowerCase())\n  );\n\n  // Get last message info for sidebar preview\n  const getLastMessage = (userParam: string) => {\n    const thread = messages.filter(\n      (m) =>\n        currentUser &&\n        ((m.sender === currentUser.username && m.recipient === userParam) ||\n          (m.sender === userParam && m.recipient === currentUser.username))\n    );\n    return thread[thread.length - 1];\n  };\n\n  const renderCheckmarks = (status: "sent" | "delivered" | "read") => {\n    const color = status === "read" ? "text-emerald-500" : "text-slate-400";\n    return (\n      <svg\n        className={`w-3.5 h-3.5 inline ml-1 ${color} transition-colors duration-300`}\n        fill="none"\n        stroke="currentColor"\n        strokeWidth="3"\n        viewBox="0 0 24 24"\n      >\n        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />\n        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25l6-6 4.5-4.5" />\n      </svg>\n    );\n  };\n\n  // Password Complexity Calculation\n  const hasMinLength = newPassword.length >= 8;\n  const hasCapital = /[A-Z]/.test(newPassword);\n  const hasNumber = /[0-9]/.test(newPassword);\n  const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);\n\n  const getSecurityScore = () => {\n    let score = 50;\n    if (twoFactor) score += 20;\n    if (currentPassword.length >= 10) score += 10;\n    if (name && username && email && phone) score += 10;\n    if (newPassword && hasMinLength && hasCapital && hasNumber && hasSpecial) score += 10;\n    return Math.min(score, 100);\n  };\n\n  const securityScore = getSecurityScore();\n\n  const getPasswordStrength = () => {\n    if (!newPassword) return { score: 0, label: "None", color: "bg-slate-800", text: "text-slate-500" };\n    let score = 0;\n    if (hasMinLength) score++;\n    if (hasCapital) score++;\n    if (hasNumber) score++;\n    if (hasSpecial) score++;\n\n    switch (score) {\n      case 1: return { score: 25, label: "Weak ⚠️", color: "bg-rose-500/80", text: "text-rose-400" };\n      case 2: return { score: 50, label: "Medium ⚡", color: "bg-amber-500/80", text: "text-amber-400" };\n      case 3: return { score: 75, label: "Strong ✨", color: "bg-indigo-500/80", text: "text-indigo-400" };\n      case 4: return { score: 100, label: "Excellent 🔒", color: "bg-emerald-500/80", text: "text-emerald-400" };\n      default: return { score: 10, label: "Too Short ❌", color: "bg-rose-600/85", text: "text-rose-500" };\n    }\n  };\n\n  const passwordStrength = getPasswordStrength();\n\n  // Save profile and sync to currentUser states\n  const handleSaveProfile = (e: React.FormEvent) => {\n    e.preventDefault();\n    \n    if (currentUser) {\n      const updatedUser: User = {\n        ...currentUser,\n        username: username.trim(),\n        avatarUrl: avatar,\n        bio: bio.trim(),\n        email: email.trim()\n      };\n      \n      setCurrentUser(updatedUser);\n      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));\n      \n      setRegisteredUsers((prev) => {\n        const list = prev.map(u => u.username.toLowerCase() === currentUser.username.toLowerCase() ? updatedUser : u);\n        localStorage.setItem("chatgroup_registered_users", JSON.stringify(list));\n        return list;\n      });\n\n      if (channelRef.current) {\n        channelRef.current.postMessage({\n          type: "USER_REGISTER",\n          user: updatedUser\n        });\n      }\n    }\n\n    setToast("Account details updated successfully! 🎉");\n    setTimeout(() => setToast(null), 3000);\n  };\n\n  const handleSavePassword = (e: React.FormEvent) => {\n    e.preventDefault();\n    if (newPassword !== confirmPassword) {\n      alert("New password and confirm password do not match!");\n      return;\n    }\n    setCurrentPassword(newPassword);\n    if (currentUser) {\n      const updatedUser: User = {\n        ...currentUser,\n        password: newPassword\n      };\n      setCurrentUser(updatedUser);\n      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));\n    }\n    setNewPassword("");\n    setConfirmPassword("");\n    setToast("Password updated successfully! 🛡️");\n    setTimeout(() => setToast(null), 3000);\n  };\n\n  const fileInputRef = useRef<HTMLInputElement>(null);\n\n  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {\n    const file = e.target.files?.[0];\n    if (file) {\n      const reader = new FileReader();\n      reader.onloadend = () => {\n        const base64String = reader.result as string;\n        setAvatar(base64String);\n        \n        if (currentUser) {\n          const updatedUser: User = { ...currentUser, avatarUrl: base64String };\n          setCurrentUser(updatedUser);\n          localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));\n        }\n\n        setToast("Profile picture updated successfully! 📸");\n        setTimeout(() => setToast(null), 3000);\n      };\n      reader.readAsDataURL(file);\n    }\n  };\n\n  const rollRandomAvatar = () => {\n    const randomAvatar = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];\n    setAvatar(randomAvatar);\n    if (currentUser) {\n      const updatedUser: User = { ...currentUser, avatarUrl: randomAvatar };\n      setCurrentUser(updatedUser);\n      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));\n    }\n    setToast("Rolled a new profile avatar! 🎲");\n    setTimeout(() => setToast(null), 3000);\n  };\n\n  const triggerAvatarUpload = () => {\n    fileInputRef.current?.click();\n  };\n\n  // --- RENDERS CHATROOM OR SETTINGS VIEW ---\n  if (currentView === "settings") {\n    return (\n      <main className={`min-h-screen w-full transition-colors duration-500 flex flex-col justify-start items-center p-4 sm:p-6 md:p-12 font-sans relative overflow-y-auto ${\n        theme === "black" \n          ? "bg-black text-[#E4E6EB] black-theme" \n          : theme === "dark" \n            ? "bg-[#04060A] text-[#E4E6EB]" \n            : "bg-slate-50 text-black light-theme"\n      }`}>\n        \n        {/* Hidden File Input for Avatar Upload */}\n        <input\n          type="file"\n          ref={fileInputRef}\n          onChange={handleAvatarFileChange}\n          accept="image/*"\n          className="hidden"\n        />\n        \n        {/* Background glowing particles (Aurora effect) */}\n        <div className="absolute inset-0 pointer-events-none z-0">\n          <div className={`absolute top-[5%] left-[10%] w-[380px] h-[380px] rounded-full blur-[120px] transition-opacity duration-700 ${\n            isDark ? "bg-cyan-500/10 opacity-100" : "bg-cyan-400/5 opacity-80"\n          }`} />\n          <div className={`absolute bottom-[10%] right-[10%] w-[450px] h-[450px] rounded-full blur-[140px] transition-opacity duration-700 ${\n            isDark ? "bg-purple-500/10 opacity-100" : "bg-purple-400/5 opacity-80"\n          }`} />\n        </div>\n\n        {/* Floating Toast Notification */}\n        {toast && (\n          <div className="fixed top-8 z-50 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 font-extrabold px-6 py-4 rounded-full shadow-[0_12px_40px_rgba(6,182,212,0.4)] text-sm tracking-wide flex items-center gap-2.5 animate-bounce border border-white/20">\n            <CheckCheck className="w-5 h-5 text-slate-950" />\n            <span>{toast}</span>\n          </div>\n        )}\n\n        <div className="w-full max-w-5xl z-10 space-y-6">\n          \n          {/* Top Header Panel */}\n          <div className={`relative border rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden transition-colors duration-500 ${\n            isDark \n              ? "bg-gradient-to-r from-slate-950 via-[#0B0F19] to-slate-950 border-slate-800/80" \n              : "bg-white border-slate-200"\n          }`}>\n            \n            <div className="absolute top-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />\n            <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-transparent via-purple-500 to-transparent" />\n\n            <div className="flex items-center gap-4 text-center sm:text-left flex-col sm:flex-row">\n              {/* Back to Chat Trigger */}\n              <button\n                onClick={() => setCurrentView("chat")}\n                className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${\n                  isDark\n                    ? "bg-slate-900 border-slate-800 text-cyan-400 hover:bg-slate-800"\n                    : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"\n                }`}\n                title="Back to ChatRoom"\n              >\n                <ArrowRight className="w-4.5 h-4.5 rotate-180" />\n              </button>\n              \n              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center flex-shrink-0 text-cyan-400 shadow-inner">\n                <Fingerprint className="w-6 h-6 animate-pulse" />\n              </div>\n              <div>\n                <h1 className="text-2xl md:text-3xl font-black tracking-tight">\n                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400 dark:from-white dark:to-slate-400 from-slate-950 to-slate-700">\n                    Settings Dashboard\n                  </span>\n                </h1>\n                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-black font-semibold"}`}>\n                  Customize account profile details and manage credentials.\n                </p>\n              </div>\n            </div>\n\n            <div className="flex items-center gap-3">\n              <button\n                onClick={() => setTheme(prev => {\n                  if (prev === "light") return "dark";\n                  if (prev === "dark") return "black";\n                  return "light";\n                })}\n                className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${\n                  theme === "black"\n                    ? "bg-[#121212] border-neutral-900 text-amber-400 hover:bg-neutral-900"\n                    : theme === "dark"\n                      ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-850"\n                      : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"\n                }`}\n                title={`Toggle Theme (Current: ${theme === "black" ? "OLED Black" : theme === "dark" ? "Dark Mode" : "Light Mode"})`}\n              >\n                {theme === "black" ? (\n                  <Sun className="w-4.5 h-4.5" />\n                ) : theme === "dark" ? (\n                  <Sparkles className="w-4.5 h-4.5" />\n                ) : (\n                  <Moon className="w-4.5 h-4.5" />\n                )}\n              </button>\n\n              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border select-none ${\n                isDark ? "bg-slate-900/50 border-slate-800/60" : "bg-white border-slate-200 shadow-sm"\n              }`}>\n                <Clock className="w-4 h-4 text-cyan-400" />\n                <span className="text-xs font-bold">{timeString || "12:37"}</span>\n                <div className="w-px h-3 bg-slate-850" />\n                <ShieldCheck className="w-4 h-4 text-emerald-400" />\n                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Secured</span>\n              </div>\n            </div>\n          </div>\n\n          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">\n            <div className="hidden lg:block lg:col-span-4 space-y-6">\n              <div className={`border rounded-[28px] p-5 shadow-xl transition-all duration-500 ${\n                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"\n              }`}>\n                <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-4 px-1.5 ${isDark ? "text-slate-400" : "text-black"}`}>Settings Hub</h3>\n                \n                <div className="space-y-1.5">\n                  <button\n                    onClick={() => setActiveSection("profile")}\n                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${\n                      activeSection === "profile"\n                        ? "bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 text-cyan-400 border border-cyan-500/20"
-                        : isDark ? "text-slate-400 hover:text-slate-200 border-transparent" : "text-black hover:text-cyan-500 border-transparent"\n                    }`}\n                  >\n                    <UserIcon className="w-4.5 h-4.5" />\n                    <span>Account Details</span>\n                  </button>\n\n                  <button\n                    onClick={() => setActiveSection("security")}\n                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${\n                      activeSection === "security"\n                        ? "bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 text-cyan-400 border border-cyan-500/20"
-                        : isDark ? "text-slate-400 hover:text-slate-200 border-transparent" : "text-black hover:text-cyan-500 border-transparent"\n                    }`}\n                  >\n                    <Lock className="w-4.5 h-4.5" />\n                    <span>Password & Security</span>\n                  </button>\n                  <button\n                    onClick={() => setActiveSection("instagram")}\n                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${\n                      activeSection === "instagram"\n                        ? theme === "dark"\n                          ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"\n                          : "bg-cyan-50 border-cyan-200 text-cyan-700"\n                        : theme === "dark"\n                          ? "border-transparent text-slate-400 hover:text-slate-200"\n                          : "border-transparent text-slate-700 hover:text-cyan-600"\n                    }`}\n                  >\n                    <svg className="w-4.5 h-4.5 text-pink-500 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">\n                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>\n                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>\n                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>\n                    </svg>\n                    <span>Instagram Profile</span>\n                  </button>\n                </div>\n              </div>\n\n              <div className={`border rounded-[28px] p-5 shadow-xl transition-all duration-500 overflow-hidden relative ${\n                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"\n              }`}>\n                <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-cyan-500/5 rounded-full blur-[20px] pointer-events-none" />\n\n                <div className="flex items-center gap-2 mb-4">\n                  <Award className="w-5 h-5 text-cyan-400" />\n                  <h3 className={`text-xs font-extrabold uppercase tracking-wider ${isDark ? "text-slate-350" : "text-black"}`}>Security Health</h3>\n                </div>\n\n                <div className="flex items-center gap-4">\n                  <div className="relative w-18 h-18 rounded-full border-4 border-slate-800 flex items-center justify-center flex-shrink-0">\n                    <div className="absolute inset-0 rounded-full border-4 border-cyan-400 transition-all duration-500" style={{ clipPath: `polygon(0 0, 100% 0, 100% ${securityScore}%, 0 ${securityScore}%)` }} />\n                    <span className="text-base font-black">{securityScore}%</span>\n                  </div>\n\n                  <div className="space-y-1">\n                    <h4 className="text-xs.5 font-bold tracking-wide">\n                      {securityScore === 100 ? "Highly Shielded! 🔒" : "Enhancement Recommended"}\n                    </h4>\n                    <p className={`text-[10px] leading-normal ${isDark ? "text-slate-400" : "text-black"}`}>\n                      {securityScore === 100 ? "Your account profile details are fully setup with robust configurations." : "Set a strong password and enable 2-Factor Authentication to reach 100% protection."}\n                    </p>\n                  </div>\n                </div>\n\n                <div className="mt-5 pt-4 border-t border-slate-850/50 flex items-center justify-between">\n                  <div className="flex items-center gap-1.5">\n                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />\n                    <span className="text-[11px] font-bold">2-Factor Authentication</span>\n                  </div>\n                  \n                  <button\n                    type="button"\n                    onClick={() => {\n                      setTwoFactor(!twoFactor);\n                      setToast(twoFactor ? "Two-Factor Auth Disabled 🔓" : "Two-Factor Auth Enabled 🔒");\n                      setTimeout(() => setToast(null), 2500);\n                    }}\n                    className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 relative ${\n                      twoFactor ? "bg-cyan-500" : "bg-slate-800"\n                    }`}\n                  >\n                    <div className={`w-4.5 h-4.5 rounded-full bg-slate-950 transition-transform duration-300 ${\n                      twoFactor ? "translate-x-4.5 bg-white" : "translate-x-0"\n                    }`} />\n                  </button>\n                </div>\n              </div>\n            </div>\n\n            <div className="lg:col-span-8 w-full space-y-4">\n              <div className={`flex lg:hidden gap-1.5 p-1.5 rounded-2xl border transition-colors duration-500 ${\n                isDark \n                  ? "bg-slate-950/40 border-slate-800/80" \n                  : "bg-white border-slate-200 shadow-sm"\n              }`}>\n                <button\n                  type="button"\n                  onClick={() => setActiveSection("profile")}\n                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${\n                    activeSection === "profile"\n                      ? isDark\n                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"\n                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"\n                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500"\n                  }`}\n                >\n                  <UserIcon className="w-4 h-4" />\n                  <span>Account</span>\n                </button>\n\n                <button\n                  type="button"\n                  onClick={() => setActiveSection("security")}\n                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${\n                    activeSection === "security"\n                      ? isDark\n                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"\n                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"\n                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500"\n                  }`}\n                >\n                  <Lock className="w-4 h-4" />\n                  <span>Security</span>\n                </button>\n\n                <button\n                  type="button"\n                  onClick={() => setActiveSection("instagram")}\n                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${\n                    activeSection === "instagram"\n                      ? theme === "dark"\n                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"\n                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"\n                      : theme === "dark" ? "text-slate-400 hover:text-slate-200" : "text-slate-500"\n                  }`}\n                >\n                  <svg className="w-4 h-4 text-pink-500 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">\n                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>\n                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>\n                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>\n                  </svg>\n                  <span>Instagram</span>\n                </button>\n              </div>\n              \n              {activeSection === "profile" && (\n                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${\n                  isDark ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"\n                }`}>\n                  <form onSubmit={handleSaveProfile} className="space-y-6">\n                    <div className={`border-b pb-4 flex items-center justify-between select-none ${\n                      theme === "dark" ? "border-slate-800/60" : "border-slate-100"\n                    }`}>\n                      <div className="flex items-center gap-2">\n                        <UserIcon className="w-5 h-5 text-cyan-500" />\n                        <h2 className={`text-lg font-black tracking-wide ${theme === "dark" ? "text-white" : "text-slate-950"}`}>Account Profile Details</h2>\n                      </div>\n                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border transition-colors duration-500 ${\n                        theme === "dark"\n                          ? "text-slate-400 bg-slate-900/60 border-slate-800"\n                          : "text-slate-700 bg-slate-100 border-slate-200"\n                      }`}>Information</span>\n                    </div>\n\n                    <div className={`flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl border select-none transition-colors duration-500 ${\n                      isDark ? "bg-slate-950/40 border-slate-900/60" : "bg-slate-50 border-slate-200"\n                    }`}>\n                      <div className="relative group">\n                        <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 opacity-60 blur-xs group-hover:opacity-100 transition duration-300" />\n                        \n                        <div className="w-[88px] h-[88px] rounded-full overflow-hidden border-[3px] border-slate-950 relative bg-slate-900">\n                          <img\n                            src={avatar}\n                            alt={name}\n                            className="object-cover w-full h-full"\n                          />\n                        </div>\n                        <button\n                          type="button"\n                          onClick={triggerAvatarUpload}\n                          className="absolute -bottom-1 -right-1 p-2 bg-slate-900 border border-slate-700/80 text-cyan-400 rounded-full shadow-lg hover:bg-slate-800 transition"\n                          title="Upload Avatar"\n                        >\n                          <Camera className="w-3.5 h-3.5" />\n                        </button>\n                      </div>\n\n                      <div className="text-center sm:text-left space-y-2">
+    }
+
+    const newUser: User = {
+      id: "u_" + Math.random().toString(36).substr(2, 9),
+      username: regUsername.trim(),
+      email: regEmail.trim().toLowerCase(),
+      password: regPassword,
+      avatarUrl: selectedAvatarUrl,
+      category: "MEMBER",
+      bio: "Joined ChatGroup. Let's communicate in real-time.",
+      email: regEmail.trim(),
+      password: regPassword
+    };
+
+    // Check if duplicate of exact (username, email, password) already exists
+    const duplicate = registeredUsers.some(
+      (u) =>
+        u.username.toLowerCase() === newUser.username.toLowerCase() &&
+        u.email?.toLowerCase() === newUser.email?.toLowerCase() &&
+        u.password === newUser.password
+    );
+
+    if (duplicate) {
+      setToast("An account with this username, email and password already exists! ❌");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    setCurrentUser(newUser);
+    localStorage.setItem("chatgroup_current_user", JSON.stringify(newUser));
+
+    // Sync settings dashboard profiles
+    setName(newUser.username);
+    setUsername(newUser.username.toLowerCase().replace(/\s+/g, "_"));
+    setAvatar(newUser.avatarUrl);
+    setBio(newUser.bio || "");
+    setEmail(newUser.email || "");
+    setCurrentPassword(newUser.password || "");
+
+    setRegisteredUsers((prev) => {
+      const nextList = [...prev, newUser];
+      localStorage.setItem("chatgroup_registered_users", JSON.stringify(nextList));
+      return nextList;
+    });
+
+    const channel = new BroadcastChannel("chatgroup_realtime");
+    channel.postMessage({
+      type: "USER_REGISTER",
+      user: newUser
+    });
+    channel.close();
+
+    setToast("Account registered successfully! Welcome. 🎉");
+    setTimeout(() => setToast(null), 3000);
+
+    // Clear registration fields
+    setRegUsername("");
+    setRegEmail("");
+    setRegPassword("");
+  };
+
+  // Submit login form
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginIdentifier.trim() || !loginPassword) {
+      setToast("Please fill in all login fields! ❌");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    const identifier = loginIdentifier.trim().toLowerCase();
+
+    // Query registeredUsers for an account with matching (username OR email) AND matching password
+    const matchedUser = registeredUsers.find(
+      (u) =>
+        (u.username.toLowerCase() === identifier || u.email?.toLowerCase() === identifier) &&
+        u.password === loginPassword
+    );
+
+    if (matchedUser) {
+      setCurrentUser(matchedUser);
+      localStorage.setItem("chatgroup_current_user", JSON.stringify(matchedUser));
+
+      // Sync settings dashboard profiles
+      setName(matchedUser.username);
+      setUsername(matchedUser.username.toLowerCase().replace(/\s+/g, "_"));
+      setAvatar(matchedUser.avatarUrl);
+      setBio(matchedUser.bio || "");
+      if (matchedUser.email) setEmail(matchedUser.email);
+      if (matchedUser.password) setCurrentPassword(matchedUser.password);
+
+      setToast(`Logged in as ${matchedUser.username}! Welcome back. 👋`);
+      setTimeout(() => setToast(null), 3000);
+
+      // Clear login fields
+      setLoginIdentifier("");
+      setLoginPassword("");
+    } else {
+      setToast("Invalid username/email or password! ❌");
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  // Google ID Sign-in handler
+  const handleGoogleSignIn = (gUsername: string, emailStr: string, avatarUrlStr: string) => {
+    setIsSigningInWithGoogle(true);
+
+    // Simulate minor network delay for OAuth realism
+    setTimeout(() => {
+      const newUser: User = {
+        id: "google_" + Math.random().toString(36).substr(2, 9),
+        username: gUsername.trim(),
+        email: emailStr,
+        password: "google_oauth",
+        avatarUrl: avatarUrlStr,
+        category: "MEMBER",
+        bio: `Logged in via Google (${emailStr}).`
+      };
+
+      setCurrentUser(newUser);
+      localStorage.setItem("chatgroup_current_user", JSON.stringify(newUser));
+
+      // Sync settings dashboard profiles
+      setName(newUser.username);
+      setUsername(newUser.username.toLowerCase().replace(/\s+/g, "_"));
+      setAvatar(newUser.avatarUrl);
+      setBio(newUser.bio || "");
+      setEmail(emailStr);
+      setCurrentPassword("google_oauth");
+
+      setRegisteredUsers((prev) => {
+        const exists = prev.some((u) => u.username.toLowerCase() === newUser.username.toLowerCase() && u.email?.toLowerCase() === emailStr.toLowerCase());
+        if (exists) return prev;
+        const nextList = [...prev, newUser];
+        localStorage.setItem("chatgroup_registered_users", JSON.stringify(nextList));
+        return nextList;
+      });
+
+      const channel = new BroadcastChannel("chatgroup_realtime");
+      channel.postMessage({
+        type: "USER_REGISTER",
+        user: newUser
+      });
+      channel.close();
+
+      setIsSigningInWithGoogle(false);
+      setIsGoogleModalOpen(false);
+
+      // Trigger success toast
+      setToast("Signed in with Google successfully! 🛡️");
+      setTimeout(() => setToast(null), 3000);
+    }, 1200);
+  };
+
+  // Send message submit
+  const handleSendMessage = (textToSend = inputText, imageLink?: string) => {
+    const textContent = textToSend.trim();
+    if (!textContent && !imageLink) return;
+    if (!currentUser || !activeContact) return;
+
+    const timeStringVal = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    const newMsg: Message = {
+      id: Math.random().toString(36).substring(2, 9),
+      sender: currentUser.username,
+      recipient: activeContact.username,
+      text: textContent,
+      imageUrl: imageLink,
+      time: timeStringVal,
+      status: "sent",
+      isNew: true
+    };
+
+    setMessages((prev) => {
+      const nextMsgs = [...prev, newMsg];
+      localStorage.setItem("chatgroup_messages", JSON.stringify(nextMsgs));
+      return nextMsgs;
+    });
+
+    setInputText("");
+    playSound("send");
+    setTimeout(() => scrollToBottom("smooth"), 50);
+
+    if (myTypingTimeoutRef.current) {
+      clearTimeout(myTypingTimeoutRef.current);
+    }
+    if (channelRef.current) {
+      channelRef.current.postMessage({
+        type: "TYPING",
+        from: currentUser.username,
+        to: activeContact.username,
+        isTyping: false
+      });
+      channelRef.current.postMessage({
+        type: "MSG",
+        msg: newMsg,
+        from: currentUser.username,
+        to: activeContact.username
+      });
+    }
+
+    setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === newMsg.id ? { ...msg, status: "delivered" } : msg
+        )
+      );
+    }, 1000);
+
+    const isMock = MOCK_CONTACTS.some((c) => c.username === activeContact.username);
+    const isOffline = onlineUsers[activeContact.username] === "offline" || !onlineUsers[activeContact.username];
+    if (isMock && isOffline) {
+      triggerMockResponse(activeContact.username);
+    }
+  };
+
+  // Simulated responses for offline directory contacts
+  const triggerMockResponse = (contactName: string) => {
+    setTimeout(() => {
+      setTypingUsers((prev) => ({ ...prev, [contactName]: true }));
+      setTimeout(() => scrollToBottom("smooth"), 50);
+
+      setTimeout(() => {
+        const replies = [
+          "Cool! I'll double check my schedules.",
+          "Awesome. Send me the media logs when you've got them.",
+          "It's a gorgeous photo, where was it taken?",
+          "Sure thing, talk to you later tonight!",
+          "Yes! Let's get together soon."
+        ];
+        const text = replies[Math.floor(Math.random() * replies.length)];
+        const timeStringVal = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        const replyMessage: Message = {
+          id: Math.random().toString(36).substring(2, 9),
+          sender: contactName,
+          recipient: currentUser?.username || "Ann",
+          text,
+          time: timeStringVal,
+          isNew: true
+        };
+
+        setMessages((prev) => {
+          const next = [...prev, replyMessage];
+          localStorage.setItem("chatgroup_messages", JSON.stringify(next));
+          return next;
+        });
+
+        setTypingUsers((prev) => ({ ...prev, [contactName]: false }));
+        playSound("receive");
+        setTimeout(() => scrollToBottom("smooth"), 50);
+      }, 2000);
+    }, 1500);
+  };
+
+  // Mock attachment click: triggers a gorgeous nature photography message send
+  const handleSendMockImage = () => {
+    if (!currentUser || !activeContact) return;
+    const mockImageUrls = [
+      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1472214222555-d404758b1c42?auto=format&fit=crop&w=400&q=80"
+    ];
+    const chosenImage = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
+    handleSendMessage("", chosenImage);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setActiveContact(MOCK_CONTACTS[0]);
+    localStorage.removeItem("chatgroup_current_user");
+  };
+
+  // Filters messages for selected user
+  const conversationMessages = messages.filter(
+    (msg) =>
+      currentUser &&
+      activeContact &&
+      ((msg.sender === currentUser.username && msg.recipient === activeContact.username) ||
+        (msg.sender === activeContact.username && msg.recipient === currentUser.username))
+  );
+
+  // Filters contacts list for sidebar search
+  const filteredContacts = registeredUsers.filter(
+    (u) =>
+      currentUser &&
+      u.username.toLowerCase() !== currentUser.username.toLowerCase() &&
+      u.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get last message info for sidebar preview
+  const getLastMessage = (userParam: string) => {
+    const thread = messages.filter(
+      (m) =>
+        currentUser &&
+        ((m.sender === currentUser.username && m.recipient === userParam) ||
+          (m.sender === userParam && m.recipient === currentUser.username))
+    );
+    return thread[thread.length - 1];
+  };
+
+  const renderCheckmarks = (status: "sent" | "delivered" | "read") => {
+    const color = status === "read" ? "text-emerald-500" : "text-slate-400";
+    return (
+      <svg
+        className={`w-3.5 h-3.5 inline ml-1 ${color} transition-colors duration-300`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25l6-6 4.5-4.5" />
+      </svg>
+    );
+  };
+
+  // Password Complexity Calculation
+  const hasMinLength = newPassword.length >= 8;
+  const hasCapital = /[A-Z]/.test(newPassword);
+  const hasNumber = /[0-9]/.test(newPassword);
+  const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
+
+  const getSecurityScore = () => {
+    let score = 50;
+    if (twoFactor) score += 20;
+    if (currentPassword.length >= 10) score += 10;
+    if (name && username && email && phone) score += 10;
+    if (newPassword && hasMinLength && hasCapital && hasNumber && hasSpecial) score += 10;
+    return Math.min(score, 100);
+  };
+
+  const securityScore = getSecurityScore();
+
+  const getPasswordStrength = () => {
+    if (!newPassword) return { score: 0, label: "None", color: "bg-slate-800", text: "text-slate-500" };
+    let score = 0;
+    if (hasMinLength) score++;
+    if (hasCapital) score++;
+    if (hasNumber) score++;
+    if (hasSpecial) score++;
+
+    switch (score) {
+      case 1: return { score: 25, label: "Weak ⚠️", color: "bg-rose-500/80", text: "text-rose-400" };
+      case 2: return { score: 50, label: "Medium ⚡", color: "bg-amber-500/80", text: "text-amber-400" };
+      case 3: return { score: 75, label: "Strong ✨", color: "bg-indigo-500/80", text: "text-indigo-400" };
+      case 4: return { score: 100, label: "Excellent 🔒", color: "bg-emerald-500/80", text: "text-emerald-400" };
+      default: return { score: 10, label: "Too Short ❌", color: "bg-rose-600/85", text: "text-rose-500" };
+    }
+  };
+
+  const passwordStrength = getPasswordStrength();
+
+  // Save profile and sync to currentUser states
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (currentUser) {
+      const updatedUser: User = {
+        ...currentUser,
+        username: username.trim(),
+        avatarUrl: avatar,
+        bio: bio.trim(),
+        email: email.trim()
+      };
+      
+      setCurrentUser(updatedUser);
+      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
+      
+      setRegisteredUsers((prev) => {
+        const list = prev.map(u => u.username.toLowerCase() === currentUser.username.toLowerCase() ? updatedUser : u);
+        localStorage.setItem("chatgroup_registered_users", JSON.stringify(list));
+        return list;
+      });
+
+      if (channelRef.current) {
+        channelRef.current.postMessage({
+          type: "USER_REGISTER",
+          user: updatedUser
+        });
+      }
+    }
+
+    setToast("Account details updated successfully! 🎉");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSavePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      alert("New password and confirm password do not match!");
+      return;
+    }
+    setCurrentPassword(newPassword);
+    if (currentUser) {
+      const updatedUser: User = {
+        ...currentUser,
+        password: newPassword
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
+    }
+    setNewPassword("");
+    setConfirmPassword("");
+    setToast("Password updated successfully! 🛡️");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatar(base64String);
+        
+        if (currentUser) {
+          const updatedUser: User = { ...currentUser, avatarUrl: base64String };
+          setCurrentUser(updatedUser);
+          localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
+        }
+
+        setToast("Profile picture updated successfully! 📸");
+        setTimeout(() => setToast(null), 3000);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const rollRandomAvatar = () => {
+    const randomAvatar = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
+    setAvatar(randomAvatar);
+    if (currentUser) {
+      const updatedUser: User = { ...currentUser, avatarUrl: randomAvatar };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
+    }
+    setToast("Rolled a new profile avatar! 🎲");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const triggerAvatarUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  // --- RENDERS CHATROOM OR SETTINGS VIEW ---
+  if (currentView === "settings") {
+    return (
+      <main className={`min-h-screen w-full transition-colors duration-500 flex flex-col justify-start items-center p-4 sm:p-6 md:p-12 font-sans relative overflow-y-auto ${
+        theme === "black" 
+          ? "bg-black text-[#E4E6EB] black-theme" 
+          : theme === "dark" 
+            ? "bg-[#04060A] text-[#E4E6EB]" 
+            : "bg-slate-50 text-black light-theme"
+      }`}>
+        
+        {/* Hidden File Input for Avatar Upload */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleAvatarFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+        
+        {/* Background glowing particles (Aurora effect) */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className={`absolute top-[5%] left-[10%] w-[380px] h-[380px] rounded-full blur-[120px] transition-opacity duration-700 ${
+            isDark ? "bg-cyan-500/10 opacity-100" : "bg-cyan-400/5 opacity-80"
+          }`} />
+          <div className={`absolute bottom-[10%] right-[10%] w-[450px] h-[450px] rounded-full blur-[140px] transition-opacity duration-700 ${
+            isDark ? "bg-purple-500/10 opacity-100" : "bg-purple-400/5 opacity-80"
+          }`} />
+        </div>
+
+        {/* Floating Toast Notification */}
+        {toast && (
+          <div className="fixed top-8 z-50 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 font-extrabold px-6 py-4 rounded-full shadow-[0_12px_40px_rgba(6,182,212,0.4)] text-sm tracking-wide flex items-center gap-2.5 animate-bounce border border-white/20">
+            <CheckCheck className="w-5 h-5 text-slate-950" />
+            <span>{toast}</span>
+          </div>
+        )}
+
+        <div className="w-full max-w-5xl z-10 space-y-6">
+          
+          {/* Top Header Panel */}
+          <div className={`relative border rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden transition-colors duration-500 ${
+            isDark 
+              ? "bg-gradient-to-r from-slate-950 via-[#0B0F19] to-slate-950 border-slate-800/80" 
+              : "bg-white border-slate-200"
+          }`}>
+            
+            <div className="absolute top-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+            <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
+
+            <div className="flex items-center gap-4 text-center sm:text-left flex-col sm:flex-row">
+              {/* Back to Chat Trigger */}
+              <button
+                onClick={() => setCurrentView("chat")}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
+                  isDark
+                    ? "bg-slate-900 border-slate-800 text-cyan-400 hover:bg-slate-800"
+                    : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"
+                }`}
+                title="Back to ChatRoom"
+              >
+                <ArrowRight className="w-4.5 h-4.5 rotate-180" />
+              </button>
+              
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center flex-shrink-0 text-cyan-400 shadow-inner">
+                <Fingerprint className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400 dark:from-white dark:to-slate-400 from-slate-950 to-slate-700">
+                    Settings Dashboard
+                  </span>
+                </h1>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-black font-semibold"}`}>
+                  Customize account profile details and manage credentials.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setTheme(prev => {
+                  if (prev === "light") return "dark";
+                  if (prev === "dark") return "black";
+                  return "light";
+                })}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
+                  theme === "black"
+                    ? "bg-[#121212] border-neutral-900 text-amber-400 hover:bg-neutral-900"
+                    : theme === "dark"
+                      ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-850"
+                      : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"
+                }`}
+                title={`Toggle Theme (Current: ${theme === "black" ? "OLED Black" : theme === "dark" ? "Dark Mode" : "Light Mode"})`}
+              >
+                {theme === "black" ? (
+                  <Sun className="w-4.5 h-4.5" />
+                ) : theme === "dark" ? (
+                  <Sparkles className="w-4.5 h-4.5" />
+                ) : (
+                  <Moon className="w-4.5 h-4.5" />
+                )}
+              </button>
+
+              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border select-none ${
+                isDark ? "bg-slate-900/50 border-slate-800/60" : "bg-white border-slate-200 shadow-sm"
+              }`}>
+                <Clock className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-bold">{timeString || "12:37"}</span>
+                <div className="w-px h-3 bg-slate-850" />
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Secured</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="hidden lg:block lg:col-span-4 space-y-6">
+              <div className={`border rounded-[28px] p-5 shadow-xl transition-all duration-500 ${
+                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"
+              }`}>
+                <h3 className={`text-xs font-extrabold uppercase tracking-wider mb-4 px-1.5 ${isDark ? "text-slate-400" : "text-black"}`}>Settings Hub</h3>
+                
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setActiveSection("profile")}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${
+                      activeSection === "profile"
+                        ? "bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 text-cyan-400 border border-cyan-500/20"
+                        : isDark ? "text-slate-400 hover:text-slate-200 border-transparent" : "text-black hover:text-cyan-500 border-transparent"
+                    }`}
+                  >
+                    <UserIcon className="w-4.5 h-4.5" />
+                    <span>Account Details</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSection("security")}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${
+                      activeSection === "security"
+                        ? "bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 text-cyan-400 border border-cyan-500/20"
+                        : isDark ? "text-slate-400 hover:text-slate-200 border-transparent" : "text-black hover:text-cyan-500 border-transparent"
+                    }`}
+                  >
+                    <Lock className="w-4.5 h-4.5" />
+                    <span>Password & Security</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("instagram")}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl font-bold text-xs.5 transition-all text-left border ${
+                      activeSection === "instagram"
+                        ? theme === "dark"
+                          ? "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+                          : "bg-cyan-50 border-cyan-200 text-cyan-700"
+                        : theme === "dark"
+                          ? "border-transparent text-slate-400 hover:text-slate-200"
+                          : "border-transparent text-slate-700 hover:text-cyan-600"
+                    }`}
+                  >
+                    <svg className="w-4.5 h-4.5 text-pink-500 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    <span>Instagram Profile</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className={`border rounded-[28px] p-5 shadow-xl transition-all duration-500 overflow-hidden relative ${
+                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"
+              }`}>
+                <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-cyan-500/5 rounded-full blur-[20px] pointer-events-none" />
+
+                <div className="flex items-center gap-2 mb-4">
+                  <Award className="w-5 h-5 text-cyan-400" />
+                  <h3 className={`text-xs font-extrabold uppercase tracking-wider ${isDark ? "text-slate-350" : "text-black"}`}>Security Health</h3>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="relative w-18 h-18 rounded-full border-4 border-slate-800 flex items-center justify-center flex-shrink-0">
+                    <div className="absolute inset-0 rounded-full border-4 border-cyan-400 transition-all duration-500" style={{ clipPath: `polygon(0 0, 100% 0, 100% ${securityScore}%, 0 ${securityScore}%)` }} />
+                    <span className="text-base font-black">{securityScore}%</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="text-xs.5 font-bold tracking-wide">
+                      {securityScore === 100 ? "Highly Shielded! 🔒" : "Enhancement Recommended"}
+                    </h4>
+                    <p className={`text-[10px] leading-normal ${isDark ? "text-slate-400" : "text-black"}`}>
+                      {securityScore === 100 ? "Your account profile details are fully setup with robust configurations." : "Set a strong password and enable 2-Factor Authentication to reach 100% protection."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-slate-850/50 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
+                    <span className="text-[11px] font-bold">2-Factor Authentication</span>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTwoFactor(!twoFactor);
+                      setToast(twoFactor ? "Two-Factor Auth Disabled 🔓" : "Two-Factor Auth Enabled 🔒");
+                      setTimeout(() => setToast(null), 2500);
+                    }}
+                    className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 relative ${
+                      twoFactor ? "bg-cyan-500" : "bg-slate-800"
+                    }`}
+                  >
+                    <div className={`w-4.5 h-4.5 rounded-full bg-slate-950 transition-transform duration-300 ${
+                      twoFactor ? "translate-x-4.5 bg-white" : "translate-x-0"
+                    }`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-8 w-full space-y-4">
+              <div className={`flex lg:hidden gap-1.5 p-1.5 rounded-2xl border transition-colors duration-500 ${
+                isDark 
+                  ? "bg-slate-950/40 border-slate-800/80" 
+                  : "bg-white border-slate-200 shadow-sm"
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("profile")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${
+                    activeSection === "profile"
+                      ? isDark
+                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"
+                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"
+                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500"
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  <span>Account</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("security")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${
+                    activeSection === "security"
+                      ? isDark
+                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"
+                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"
+                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500"
+                  }`}
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Security</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("instagram")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs.5 transition-all cursor-pointer ${
+                    activeSection === "instagram"
+                      ? theme === "dark"
+                        ? "bg-gradient-to-r from-cyan-500/15 to-indigo-500/15 text-cyan-400 border border-cyan-500/20"
+                        : "bg-cyan-50 text-cyan-600 border border-cyan-200"
+                      : theme === "dark" ? "text-slate-400 hover:text-slate-200" : "text-slate-500"
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-pink-500 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  <span>Instagram</span>
+                </button>
+              </div>
+              
+              {activeSection === "profile" && (
+                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${
+                  isDark ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"
+                }`}>
+                  <form onSubmit={handleSaveProfile} className="space-y-6">
+                    <div className={`border-b pb-4 flex items-center justify-between select-none ${
+                      theme === "dark" ? "border-slate-800/60" : "border-slate-100"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="w-5 h-5 text-cyan-500" />
+                        <h2 className={`text-lg font-black tracking-wide ${theme === "dark" ? "text-white" : "text-slate-950"}`}>Account Profile Details</h2>
+                      </div>
+                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border transition-colors duration-500 ${
+                        theme === "dark"
+                          ? "text-slate-400 bg-slate-900/60 border-slate-800"
+                          : "text-slate-700 bg-slate-100 border-slate-200"
+                      }`}>Information</span>
+                    </div>
+
+                    <div className={`flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl border select-none transition-colors duration-500 ${
+                      isDark ? "bg-slate-950/40 border-slate-900/60" : "bg-slate-50 border-slate-200"
+                    }`}>
+                      <div className="relative group">
+                        <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 opacity-60 blur-xs group-hover:opacity-100 transition duration-300" />
+                        
+                        <div className="w-[88px] h-[88px] rounded-full overflow-hidden border-[3px] border-slate-950 relative bg-slate-900">
+                          <img
+                            src={avatar}
+                            alt={name}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={triggerAvatarUpload}
+                          className="absolute -bottom-1 -right-1 p-2 bg-slate-900 border border-slate-700/80 text-cyan-400 rounded-full shadow-lg hover:bg-slate-800 transition"
+                          title="Upload Avatar"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="text-center sm:text-left space-y-2">
                         <h3 className={`text-sm.5 font-extrabold ${isDark ? "text-white" : "text-slate-950"}`}>{name}</h3>
-                        <p className={`text-[11px] leading-normal ${isDark ? "text-slate-400" : "text-slate-700 font-medium"}`}>\n                          JPG, PNG allowed. Standard resolution will be automatically configured.\n                        </p>\n                        \n                        <div className="flex items-center justify-center sm:justify-start gap-3 mt-1.5">\n                          <button\n                            type="button"\n                            onClick={rollRandomAvatar}\n                            className={`text-xs font-bold flex items-center gap-1.5 transition ${\n                              theme === "dark" ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-600 hover:text-cyan-700"\n                            }`}\n                          >\n                            <RefreshCw className="w-3.5 h-3.5" /> Roll Random Photo\n                          </button>\n                        </div>\n\n                        {/* Preset Avatar Selection Grid */}\n                        <div className="mt-3.5 text-left">\n                          <span className={`text-[10px] font-bold uppercase tracking-widest block mb-2 ${theme === "dark" ? "text-slate-400" : "text-slate-800"}`}>Or Select Preset Avatar</span>\n                          <div className="flex flex-wrap gap-2">\n                            {PRESET_AVATARS.map((avatarItem, idx) => (\n                              <button\n                                type="button"\n                                key={idx}\n                                onClick={() => {\n                                  setAvatar(avatarItem);\n                                  if (currentUser) {\n                                    const updatedUser: User = { ...currentUser, avatarUrl: avatarItem };\n                                    setCurrentUser(updatedUser);\n                                    localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));\n                                  }\n                                  setToast("Selected preset avatar! 🎭");\n                                  setTimeout(() => setToast(null), 2000);\n                                }}\n                                className={`relative w-9 h-9 rounded-full overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 cursor-pointer ${\n                                  avatar === avatarItem ? "border-cyan-500 scale-105 shadow-[0_0_8px_rgba(6,182,212,0.4)]" : "border-transparent opacity-70 hover:opacity-100"\n                                }`}\n                              >\n                                <img src={avatarItem} className="w-full h-full object-cover" />\n                              </button>\n                            ))}\n                          </div>\n                        </div>\n                      </div>\n                    </div>\n\n                    <div className="space-y-4">\n                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">\n                        <div className="space-y-2 text-left">\n                          <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Full Name</label>\n                          <input\n                            type="text"\n                            value={name}\n                            onChange={(e) => setName(e.target.value)}\n                            className={`w-full border rounded-2xl px-4 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Your full name..."\n                            required\n                          />\n                        </div>\n\n                        <div className="space-y-2 text-left">\n                          <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Username</label>\n                          <input\n                            type="text"\n                            value={username}\n                            onChange={(e) => setUsername(e.target.value)}\n                            className={`w-full border rounded-2xl px-4 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Your username..."\n                            required\n                          />\n                        </div>\n                      </div>\n\n                      <div className="space-y-2 text-left">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Email Address</label>\n                        <div className="relative">\n                          <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${theme === "dark" ? "text-slate-500" : "text-slate-700"}`}>\n                            <Mail className="w-4 h-4" />\n                          </span>\n                          <input\n                            type="email"\n                            value={email}\n                            onChange={(e) => setEmail(e.target.value)}\n                            className={`w-full border rounded-2xl pl-12 pr-4 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="your.email@domain.com"\n                            required\n                          />\n                        </div>\n                      </div>\n\n                      <div className="space-y-2 text-left">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Phone Number</label>\n                        <div className="relative">\n                          <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${theme === "dark" ? "text-slate-500" : "text-slate-700"}`}>\n                            <Phone className="w-4 h-4" />\n                          </span>\n                          <input\n                            type="text"\n                            value={phone}\n                            onChange={(e) => setPhone(e.target.value)}\n                            className={`w-full border rounded-2xl pl-12 pr-4 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Your phone number..."\n                            required\n                          />\n                        </div>\n                      </div>\n\n                      <div className="space-y-2 text-left">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Bio Details</label>\n                        <textarea\n                          rows={3}\n                          value={bio}\n                          onChange={(e) => setBio(e.target.value)}\n                          className={`w-full border rounded-2xl p-4.5 text-xs.5 outline-none transition duration-300 resize-none ${\n                            isDark \n                              ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                              : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                          }`}\n                          placeholder="Write something about yourself..."\n                        />\n                      </div>\n                    </div>\n\n                    <button\n                      type="submit"\n                      className="w-full group bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black py-4 rounded-2xl text-xs.5 transition-all shadow-[0_8px_25px_rgba(6,182,212,0.2)] flex items-center justify-center gap-1.5 mt-4 select-none cursor-pointer"\n                    >\n                      <Save className="w-4.5 h-4.5" /> Save Account Profile Details\n                    </button>\n                  </form>\n                </div>\n              )}\n\n              {activeSection === "security" && (\n                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${\n                  isDark ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"\n                }`}>\n                  <form onSubmit={handleSavePassword} className="space-y-6">\n                    <div className={`border-b pb-4 flex items-center justify-between select-none ${\n                      theme === "dark" ? "border-slate-800/60" : "border-slate-100"\n                    }`}>\n                      <div className="flex items-center gap-2">\n                        <Lock className="w-5 h-5 text-indigo-500" />\n                        <h2 className={`text-lg font-black tracking-wide ${theme === "dark" ? "text-white" : "text-slate-950"}`}>Change Password Settings</h2>\n                      </div>\n                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border transition-colors duration-500 ${\n                        theme === "dark"\n                          ? "text-slate-400 bg-slate-900/60 border-slate-800"\n                          : "text-slate-700 bg-slate-100 border-slate-200"\n                      }`}>Authentication</span>\n                    </div>\n\n                    <div className="space-y-4">\n                      <div className="space-y-2 text-left relative">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Current Password</label>\n                        <div className="relative">\n                          <input\n                            type={showCurrentPassword ? "text" : "password"}\n                            value={currentPassword}\n                            onChange={(e) => setCurrentPassword(e.target.value)}\n                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Type current password..."\n                            required\n                          />\n                          <button\n                            type="button"\n                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}\n                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"\n                          >\n                            {showCurrentPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}\n                          </button>\n                        </div>\n                      </div>\n\n                      <div className="space-y-2 text-left relative">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>New Password</label>\n                        <div className="relative">\n                          <input\n                            type={showNewPassword ? "text" : "password"}\n                            value={newPassword}\n                            onChange={(e) => setNewPassword(e.target.value)}\n                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Type new secure password..."\n                            required\n                          />\n                          <button\n                            type="button"\n                            onClick={() => setShowNewPassword(!showNewPassword)}\n                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"\n                          >\n                            {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}\n                          </button>\n                        </div>\n\n                        {newPassword && (\n                          <div className={`mt-3.5 p-4 rounded-2xl border space-y-3 select-none text-xs transition-colors duration-500 ${\n                            theme === "dark"\n                              ? "bg-slate-950/90 border-slate-900 text-slate-350"\n                              : "bg-slate-50 border-slate-200 text-slate-800"\n                          }`}>\n                            <div className="space-y-1">\n                              <div className="flex items-center justify-between text-[10.5px]">\n                                <span className={theme === "dark" ? "text-slate-400" : "text-slate-600 font-semibold"}>Security Index:</span>\n                                <span className={`font-bold ${passwordStrength.text}`}>{passwordStrength.label}</span>\n                              </div>\n                              <div className={`w-full h-2 rounded-full overflow-hidden ${theme === "dark" ? "bg-slate-900" : "bg-slate-200"}`}>\n                                <div\n                                  className={`h-full transition-all duration-500 ${passwordStrength.color}`}\n                                  style={{ width: `${passwordStrength.score}%` }}\n                                />\n                              </div>\n                            </div>\n\n                            <div className={`pt-2 border-t grid grid-cols-2 gap-2 text-[10.5px] ${\n                              theme === "dark" ? "border-slate-900/60" : "border-slate-200"\n                            }`}>\n                              <div className="flex items-center gap-1.5">\n                                {hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}\n                                <span className={\n                                  hasMinLength \n                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" \n                                    : "text-slate-500"\n                                }>8+ Characters</span>\n                              </div>\n\n                              <div className="flex items-center gap-1.5">\n                                {hasCapital ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}\n                                <span className={\n                                  hasCapital \n                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" \n                                    : "text-slate-500"\n                                }>Uppercase Letter</span>\n                              </div>\n\n                              <div className="flex items-center gap-1.5">\n                                {hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}\n                                <span className={\n                                  hasNumber \n                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" \n                                    : "text-slate-500"\n                                }>Number (0-9)</span>\n                              </div>\n\n                              <div className="flex items-center gap-1.5">\n                                {hasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}\n                                <span className={\n                                  hasSpecial \n                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" \n                                    : "text-slate-500"\n                                }>Special Symbol</span>\n                              </div>\n                            </div>\n                          </div>\n                        )}\n                      </div>\n\n                      <div className="space-y-2 text-left relative">\n                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Confirm New Password</label>\n                        <div className="relative">\n                          <input\n                            type={showConfirmPassword ? "text" : "password"}\n                            value={confirmPassword}\n                            onChange={(e) => setConfirmPassword(e.target.value)}\n                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${\n                              isDark \n                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" \n                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"\n                            }`}\n                            placeholder="Verify new secure password..."\n                            required\n                          />\n                          <button\n                            type="button"\n                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}\n                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"\n                          >\n                            {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}\n                          </button>\n                        </div>\n                      </div>\n                    </div>\n\n                    <button\n                      type="submit"\n                      className={`w-full font-black py-4 rounded-2xl text-xs.5 transition-all flex items-center justify-center gap-1.5 mt-4 shadow-md select-none cursor-pointer border ${\n                        theme === "dark"\n                          ? "bg-white text-slate-950 hover:bg-slate-200 border-transparent"\n                          : "bg-slate-900 text-white hover:bg-slate-800 border-slate-950"\n                      }`}\n                    >\n                      <Key className="w-4.5 h-4.5" /> Save New Password\n                    </button>\n                  </form>\n                </div>\n              )}\n\n              {activeSection === "instagram" && (\n                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${\n                  theme === "dark" ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"\n                }`}>\n                  \n                  {/* Instagram Header Area */}\n                  <div className={`flex flex-col md:flex-row items-center md:items-start gap-8 border-b pb-8 select-none ${\n                    theme === "dark" ? "border-slate-800/60" : "border-slate-100"\n                  }`}>\n                    \n                    {/* Profile Picture with story gradient border */}\n                    <div className="flex-shrink-0 relative">\n                      <div className="w-[124px] h-[124px] instagram-story-ring flex items-center justify-center shadow-lg">\n                        <div className={`w-[116px] h-[116px] rounded-full overflow-hidden border-[4px] relative ${\n                          theme === "dark" ? "border-slate-950 bg-slate-900" : "border-white bg-slate-100"\n                        }`}>\n                          <img\n                            src={avatar}\n                            alt={name}\n                            className="object-cover w-full h-full"\n                          />\n                        </div>\n                      </div>\n                    </div>\n\n                    {/* Stats & Controls */}\n                    <div className="flex-1 flex flex-col items-center md:items-start gap-4">\n                      \n                      {/* Name & Buttons Row */}\n                      <div className="flex flex-col sm:flex-row items-center gap-3">\n                        <div className="flex items-center gap-1.5">\n                          <h2 className="text-xl font-bold tracking-tight">{username}</h2>\n                          \n                          {/* Verified Badge */}\n                          <svg className="w-[18px] h-[18px] text-sky-500 fill-current" viewBox="0 0 24 24">\n                            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />\n                          </svg>\n                        </div>\n                        \n                        <div className="flex items-center gap-2">\n                          <button\n                            type="button"\n                            onClick={() => setActiveSection("profile")}\n                            className={`instagram-btn-secondary ${\n                              theme === "dark" ? "instagram-btn-secondary-dark" : ""\n                            }`}\n                          >\n                            Edit Profile\n                          </button>\n                          \n                          <button\n                            type="button"\n                            onClick={() => {\n                              navigator.clipboard.writeText(`http://localhost:3000/profile/${username}`);\n                              setToast("Profile URL copied! 🔗");\n                              setTimeout(() => setToast(null), 2000);\n                            }}\n                            className={`instagram-btn-secondary ${\n                              theme === "dark" ? "instagram-btn-secondary-dark" : ""\n                            }`}\n                          >\n                            Share Profile\n                          </button>\n                        </div>\n                      </div>\n\n                      {/* Stats Row */}\n                      <div className={`flex gap-8 text-sm ${\n                        theme === "dark" ? "text-slate-300" : "text-slate-800"\n                      }`}>\n                        <div><span className="font-extrabold">9</span> posts</div>\n                        <div><span className="font-extrabold">1.4K</span> followers</div>\n                        <div><span className="font-extrabold">380</span> following</div>\n                      </div>\n\n                      {/* Bio Details */}\n                      <div className="text-center md:text-left space-y-1">\n                        <h3 className="font-bold text-sm leading-tight">{name}</h3>\n                        <p className={`text-xs uppercase tracking-wide font-bold ${\n                          theme === "dark" ? "text-slate-500" : "text-slate-700"\n                        }`}>CREATIVE DEVELOPER</p>\n                        <p className={`text-xs max-w-[420px] leading-relaxed whitespace-pre-line ${\n                          theme === "dark" ? "text-slate-300" : "text-slate-800"\n                        }`}>{bio}</p>\n                        <a \n                          href={`mailto:${email}`}\n                          className="text-xs font-semibold text-blue-600 dark:text-sky-400 hover:underline block"\n                        >\n                          {email}\n                        </a>\n                      </div>\n                    </div>\n                  </div>\n\n                  {/* Highlights section */}\n                  <div className={`py-6 border-b flex gap-6 overflow-x-auto scrollbar-thin select-none ${\n                    theme === "dark" ? "border-slate-200/10" : "border-slate-100"\n                  }`}>\n                    {[\n                      { label: "Designs 🎨", emoji: "🎨", color: "from-purple-500 to-indigo-500" },\n                      { label: "Travel ✈️", emoji: "✈️", color: "from-cyan-500 to-blue-500" },\n                      { label: "Coding 💻", emoji: "💻", color: "from-amber-500 to-orange-500" },\n                      { label: "Music 🎵", emoji: "🎵", color: "from-pink-500 to-rose-500" },\n                      { label: "Memories 📸", emoji: "📸", color: "from-teal-500 to-emerald-500" }\n                    ].map((hl, i) => (\n                      <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">\n                        <div className={`w-14 h-14 rounded-full p-[2px] border ${\n                          theme === "dark" ? "border-slate-800" : "border-slate-200"\n                        }`}>\n                          <div className={`w-full h-full rounded-full bg-gradient-to-tr ${hl.color} flex items-center justify-center text-lg shadow-inner shadow-black/20 hover:scale-105 active:scale-95 transition cursor-pointer`}>\n                            {hl.emoji}\n                          </div>\n                        </div>\n                        <span className={`text-[10px] font-bold ${\n                          theme === "dark" ? "text-slate-400" : "text-slate-800"\n                        }`}>{hl.label}</span>\n                      </div>\n                    ))}\n                  </div>\n\n                  {/* Post Grid Tab Bar */}\n                  <div className={`flex justify-center border-b select-none ${\n                    theme === "dark" ? "border-slate-200/10" : "border-slate-100"\n                  }`}>\n                    <div className="flex gap-12 text-xs font-bold tracking-widest uppercase">\n                      <button className={`flex items-center gap-1.5 py-4 border-t-2 -mt-[1px] transition-colors duration-300 ${\n                        theme === "dark" ? "border-slate-100 text-slate-100" : "border-slate-900 text-slate-900"\n                      }`}>\n                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">\n                          <rect x="3" y="3" width="7" height="7"></rect>\n                          <rect x="14" y="3" width="7" height="7"></rect>\n                          <rect x="14" y="14" width="7" height="7"></rect>\n                          <rect x="3" y="14" width="7" height="7"></rect>\n                        </svg>\n                        <span>POSTS</span>\n                      </button>\n                      <button className={`flex items-center gap-1.5 py-4 transition-colors duration-300 ${\n                        theme === "dark" ? "text-slate-500 hover:text-slate-350" : "text-slate-500 hover:text-slate-850"\n                      } opacity-60 hover:opacity-100`}>\n                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">\n                          <polygon points="23 7 16 12 23 17 23 7"></polygon>\n                          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>\n                        </svg>\n                        <span>REELS</span>\n                      </button>\n                      <button className={`flex items-center gap-1.5 py-4 transition-colors duration-300 ${\n                        theme === "dark" ? "text-slate-500 hover:text-slate-350" : "text-slate-500 hover:text-slate-850"\n                      } opacity-60 hover:opacity-100`}>\n                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">\n                          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>\n                        </svg>\n                        <span>SAVED</span>\n                      </button>\n                    </div>\n                  </div>\n\n                  {/* 3x3 Media Post Grid */}\n                  <div className="grid grid-cols-3 gap-1.5 sm:gap-3 pt-6">\n                    {MOCK_POSTS.map((url, index) => (\n                      <div key={index} className="aspect-square w-full rounded-xl overflow-hidden relative bg-slate-900 border border-slate-200/10 group/post shadow-sm">\n                        <img\n                          src={url}\n                          alt={`Post ${index + 1}`}\n                          className="object-cover w-full h-full instagram-post-zoom"\n                        />\n                        \n                        {/* Hover Overlay showing stats */}\n                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/post:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white text-sm.5 font-bold select-none pointer-events-none">\n                          <div className="flex items-center gap-1.5">\n                            <svg className="w-5 h-5 fill-white stroke-none" viewBox="0 0 24 24">\n                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>\n                            </svg>\n                            <span>{Math.floor(Math.random() * 200) + 50}</span>\n                          </div>\n                          <div className="flex items-center gap-1.5">\n                            <svg className="w-5 h-5 fill-white stroke-none" viewBox="0 0 24 24">\n                              <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"></path>\n                            </svg>\n                            <span>{Math.floor(Math.random() * 30) + 5}</span>\n                          </div>\n                        </div>\n                      </div>\n                    ))}\n                  </div>\n\n                </div>\n              )}\n\n              <div className={`block lg:hidden border rounded-[28px] p-5 shadow-xl transition-all duration-500 overflow-hidden relative ${\n                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"\n              }`}>\n                <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-cyan-500/5 rounded-full blur-[20px] pointer-events-none" />\n\n                <div className="flex items-center gap-2 mb-4">\n                  <Award className="w-5 h-5 text-cyan-400" />\n                  <h3 className="text-xs font-extrabold uppercase text-slate-350 tracking-wider">Security Health</h3>\n                </div>\n\n                <div className="flex items-center gap-4">\n                  <div className="relative w-18 h-18 rounded-full border-4 border-slate-800 flex items-center justify-center flex-shrink-0">\n                    <div className="absolute inset-0 rounded-full border-4 border-cyan-400 transition-all duration-500" style={{ clipPath: `polygon(0 0, 100% 0, 100% ${securityScore}%, 0 ${securityScore}%)` }} />\n                    <span className="text-base font-black">{securityScore}%</span>\n                  </div>\n\n                  <div className="space-y-1">\n                    <h4 className="text-xs.5 font-bold tracking-wide">\n                      {securityScore === 100 ? "Highly Shielded! 🔒" : "Enhancement Recommended"}\n                    </h4>\n                    <p className="text-[10px] text-slate-400 leading-normal">\n                      {securityScore === 100 ? "Your account profile details are fully setup with robust configurations." : "Set a strong password and enable 2-Factor Authentication to reach 100% protection."}\n                    </p>\n                  </div>\n                </div>\n\n                <div className="mt-5 pt-4 border-t border-slate-850/50 flex items-center justify-between">\n                  <div className="flex items-center gap-1.5">\n                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />\n                    <span className="text-[11px] font-bold">2-Factor Authentication</span>\n                  </div>\n                  \n                  <button\n                    type="button"\n                    onClick={() => {\n                      setTwoFactor(!twoFactor);\n                      setToast(twoFactor ? "Two-Factor Auth Disabled 🔓" : "Two-Factor Auth Enabled 🔒");\n                      setTimeout(() => setToast(null), 2500);\n                    }}\n                    className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 relative ${\n                      twoFactor ? "bg-cyan-500" : "bg-slate-800"\n                    }`}\n                  >\n                    <div className={`w-4.5 h-4.5 rounded-full bg-slate-950 transition-transform duration-300 ${\n                      twoFactor ? "translate-x-4.5 bg-white" : "translate-x-0"\n                    }`} />\n                  </button>\n                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n\n        <div className="mt-12 text-center text-[10.5px] text-slate-500 select-none z-10">\n          Secure Settings Hub. Encrypted using SHA-256 protocols. Powered by Next.js.\n        </div>\n      </main>\n    );\n  }\n\n  // --- DEFAULT VIEW: CHATROOM ---\n  return (\n    <div className={`w-full h-screen max-h-screen text-slate-800 flex flex-col font-sans antialiased overflow-hidden ${\n      theme === "black" \n        ? "bg-black text-slate-100 black-theme" \n        : theme === "dark" \n          ? "bg-slate-950 text-slate-100" \n          : "bg-white text-slate-800"\n    }`}>\n      \n      {/* 1. TOP CHATGROUP NAVBAR */}\n      <header className={`h-[60px] border-b px-6 flex items-center justify-between z-50 flex-shrink-0 ${\n        theme === "black"\n          ? "bg-black border-neutral-900"\n          : isDark \n            ? "bg-slate-900 border-slate-800" \n            : "bg-white border-slate-200"\n      }`}>\n        \n        {/* Left Branding */}\n        <div className="flex items-center gap-2.5 select-none">\n          <svg className="w-6.5 h-6.5 text-sky-500 fill-current" viewBox="0 0 24 24">\n            <path d="M12 2C6.477 2 2 6.119 2 11.2c0 2.925 1.458 5.519 3.743 7.151l-.736 2.946a.75.75 0 001.087.828l3.414-1.707c.803.18 1.637.282 2.492.282 5.523 0 10-4.119 10-9.2C22 6.119 17.523 2 12 2zm1 13h-2v-2h2v2zm0-4h-2V7h2v4z" />\n          </svg>\n          <span className="text-[19px] font-extrabold tracking-tight bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">\n            ChatGroup\n          </span>\n        </div>\n\n        {/* Center Search bar */}\n        {currentUser && (\n          <div className={`hidden md:flex w-[260px] h-[36px] border rounded-lg items-center px-3 gap-2 ${\n            theme === "black"\n              ? "bg-[#0a0a0a] border-neutral-800"\n              : isDark \n                ? "bg-slate-950 border-slate-800" \n                : "bg-slate-100 border-slate-200"\n          }`}>\n            <svg className="w-4.5 h-4.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">\n              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />\n            </svg>\n            <input\n              type="text"\n              placeholder="Search"\n              value={searchQuery}\n              onChange={(e) => setSearchQuery(e.target.value)}\n              className="bg-transparent text-sm w-full outline-none text-slate-400 placeholder-slate-450 font-normal"\n            />\n          </div>\n        )}\n\n        {/* Right Nav Icons / Theme Toggle (if not logged in) */}\n        <div className="flex items-center gap-5">\n          {currentUser ? (\n            <>\n              {/* Search Icon */}\n              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">\n                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />\n                </svg>\n              </button>\n              \n              {/* Direct Messages Icon */}\n              <button className="text-slate-500 hover:text-slate-800 transition-colors relative">\n                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />\n                </svg>\n                <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold flex items-center justify-center text-white">1</span>\n              </button>\n\n              {/* Settings gear icon */}\n              <button \n                onClick={() => {\n                  setName(currentUser.username);\n                  setUsername(currentUser.username);\n                  setBio(currentUser.bio || "");\n                  setAvatar(currentUser.avatarUrl);\n                  setCurrentView("settings");\n                }}\n                className="text-slate-500 hover:text-slate-800 transition-colors"\n                title="Settings Dashboard"\n              >\n                <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n                </svg>\n              </button>\n\n              {/* Home Icon */}\n              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">\n                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />\n                </svg>\n              </button>\n\n              {/* Notifications Heart */}\n              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">\n                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />\n                </svg>\n              </button>\n\n              {/* Logged in user avatar */}\n              <img\n                src={currentUser.avatarUrl}\n                alt={currentUser.username}\n                className="w-7 h-7 rounded-full object-cover border border-slate-200 active:scale-95 transition-transform"\n              />\n            </>\n          ) : (\n            /* Theme Toggle Button for Logged-Out Users */\n            <button\n              onClick={() => setTheme(prev => {\n                if (prev === "light") return "dark";\n                if (prev === "dark") return "black";\n                return "light";\n              })}\n              className={`p-2 rounded-xl border transition-all cursor-pointer ${\n                theme === "black"\n                  ? "bg-[#121212] border-neutral-900 text-amber-400 hover:bg-neutral-900"\n                  : isDark\n                    ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-850"\n                    : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"\n              }`}\n              title={`Toggle Theme (Current: ${theme === "black" ? "OLED Black" : theme === "dark" ? "Dark Mode" : "Light Mode"})`}\n            >\n              {theme === "black" ? (\n                <Sun className="w-4 h-4" />\n              ) : theme === "dark" ? (\n                <Sparkles className="w-4 h-4" />\n              ) : (\n                <Moon className="w-4 h-4" />\n              )}\n            </button>\n          )}\n        </div>\n      </header>\n\n      {/* 2. AUTH / LOGOUT / REGISTER CONTAINER */}\n      {!currentUser ? (\n        <div className={`flex-1 flex items-center justify-center p-6 transition-all duration-500 relative overflow-hidden ${
+                        <p className={`text-[11px] leading-normal ${isDark ? "text-slate-400" : "text-slate-700 font-medium"}`}>
+                          JPG, PNG allowed. Standard resolution will be automatically configured.
+                        </p>
+                        
+                        <div className="flex items-center justify-center sm:justify-start gap-3 mt-1.5">
+                          <button
+                            type="button"
+                            onClick={rollRandomAvatar}
+                            className={`text-xs font-bold flex items-center gap-1.5 transition ${
+                              theme === "dark" ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-600 hover:text-cyan-700"
+                            }`}
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" /> Roll Random Photo
+                          </button>
+                        </div>
+
+                        {/* Preset Avatar Selection Grid */}
+                        <div className="mt-3.5 text-left">
+                          <span className={`text-[10px] font-bold uppercase tracking-widest block mb-2 ${theme === "dark" ? "text-slate-400" : "text-slate-800"}`}>Or Select Preset Avatar</span>
+                          <div className="flex flex-wrap gap-2">
+                            {PRESET_AVATARS.map((avatarItem, idx) => (
+                              <button
+                                type="button"
+                                key={idx}
+                                onClick={() => {
+                                  setAvatar(avatarItem);
+                                  if (currentUser) {
+                                    const updatedUser: User = { ...currentUser, avatarUrl: avatarItem };
+                                    setCurrentUser(updatedUser);
+                                    localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
+                                  }
+                                  setToast("Selected preset avatar! 🎭");
+                                  setTimeout(() => setToast(null), 2000);
+                                }}
+                                className={`relative w-9 h-9 rounded-full overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                                  avatar === avatarItem ? "border-cyan-500 scale-105 shadow-[0_0_8px_rgba(6,182,212,0.4)]" : "border-transparent opacity-70 hover:opacity-100"
+                                }`}
+                              >
+                                <img src={avatarItem} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2 text-left">
+                          <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Full Name</label>
+                          <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className={`w-full border rounded-2xl px-4 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Your full name..."
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2 text-left">
+                          <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Username</label>
+                          <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className={`w-full border rounded-2xl px-4 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Your username..."
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-left">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Email Address</label>
+                        <div className="relative">
+                          <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${theme === "dark" ? "text-slate-500" : "text-slate-700"}`}>
+                            <Mail className="w-4 h-4" />
+                          </span>
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className={`w-full border rounded-2xl pl-12 pr-4 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="your.email@domain.com"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-left">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Phone Number</label>
+                        <div className="relative">
+                          <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${theme === "dark" ? "text-slate-500" : "text-slate-700"}`}>
+                            <Phone className="w-4 h-4" />
+                          </span>
+                          <input
+                            type="text"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className={`w-full border rounded-2xl pl-12 pr-4 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Your phone number..."
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-left">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Bio Details</label>
+                        <textarea
+                          rows={3}
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          className={`w-full border rounded-2xl p-4.5 text-xs.5 outline-none transition duration-300 resize-none ${
+                            isDark 
+                              ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                              : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                          }`}
+                          placeholder="Write something about yourself..."
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full group bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black py-4 rounded-2xl text-xs.5 transition-all shadow-[0_8px_25px_rgba(6,182,212,0.2)] flex items-center justify-center gap-1.5 mt-4 select-none cursor-pointer"
+                    >
+                      <Save className="w-4.5 h-4.5" /> Save Account Profile Details
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {activeSection === "security" && (
+                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${
+                  isDark ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"
+                }`}>
+                  <form onSubmit={handleSavePassword} className="space-y-6">
+                    <div className={`border-b pb-4 flex items-center justify-between select-none ${
+                      theme === "dark" ? "border-slate-800/60" : "border-slate-100"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-indigo-500" />
+                        <h2 className={`text-lg font-black tracking-wide ${theme === "dark" ? "text-white" : "text-slate-950"}`}>Change Password Settings</h2>
+                      </div>
+                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border transition-colors duration-500 ${
+                        theme === "dark"
+                          ? "text-slate-400 bg-slate-900/60 border-slate-800"
+                          : "text-slate-700 bg-slate-100 border-slate-200"
+                      }`}>Authentication</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2 text-left relative">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Current Password</label>
+                        <div className="relative">
+                          <input
+                            type={showCurrentPassword ? "text" : "password"}
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Type current password..."
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                          >
+                            {showCurrentPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-left relative">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>New Password</label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Type new secure password..."
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                          </button>
+                        </div>
+
+                        {newPassword && (
+                          <div className={`mt-3.5 p-4 rounded-2xl border space-y-3 select-none text-xs transition-colors duration-500 ${
+                            theme === "dark"
+                              ? "bg-slate-950/90 border-slate-900 text-slate-350"
+                              : "bg-slate-50 border-slate-200 text-slate-800"
+                          }`}>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[10.5px]">
+                                <span className={theme === "dark" ? "text-slate-400" : "text-slate-600 font-semibold"}>Security Index:</span>
+                                <span className={`font-bold ${passwordStrength.text}`}>{passwordStrength.label}</span>
+                              </div>
+                              <div className={`w-full h-2 rounded-full overflow-hidden ${theme === "dark" ? "bg-slate-900" : "bg-slate-200"}`}>
+                                <div
+                                  className={`h-full transition-all duration-500 ${passwordStrength.color}`}
+                                  style={{ width: `${passwordStrength.score}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className={`pt-2 border-t grid grid-cols-2 gap-2 text-[10.5px] ${
+                              theme === "dark" ? "border-slate-900/60" : "border-slate-200"
+                            }`}>
+                              <div className="flex items-center gap-1.5">
+                                {hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}
+                                <span className={
+                                  hasMinLength 
+                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" 
+                                    : "text-slate-500"
+                                }>8+ Characters</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                {hasCapital ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}
+                                <span className={
+                                  hasCapital 
+                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" 
+                                    : "text-slate-500"
+                                }>Uppercase Letter</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                {hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}
+                                <span className={
+                                  hasNumber 
+                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" 
+                                    : "text-slate-500"
+                                }>Number (0-9)</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                {hasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <div className={`w-3.5 h-3.5 rounded-full border ${theme === "dark" ? "border-slate-700" : "border-slate-400"}`} />}
+                                <span className={
+                                  hasSpecial 
+                                    ? theme === "dark" ? "text-slate-200" : "text-slate-900 font-bold" 
+                                    : "text-slate-500"
+                                }>Special Symbol</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-left relative">
+                        <label className={`text-[11px] font-bold uppercase tracking-widest px-0.5 ${isDark ? "text-slate-400" : "text-slate-700"}`}>Confirm New Password</label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className={`w-full border rounded-2xl pl-4 pr-11 py-3.5 text-xs.5 outline-none transition duration-300 ${
+                              isDark 
+                                ? "bg-slate-950/60 border-slate-800 text-white focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                                : "bg-slate-50 border-slate-200 text-slate-900 font-semibold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                            }`}
+                            placeholder="Verify new secure password..."
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className={`w-full font-black py-4 rounded-2xl text-xs.5 transition-all flex items-center justify-center gap-1.5 mt-4 shadow-md select-none cursor-pointer border ${
+                        theme === "dark"
+                          ? "bg-white text-slate-950 hover:bg-slate-200 border-transparent"
+                          : "bg-slate-900 text-white hover:bg-slate-800 border-slate-950"
+                      }`}
+                    >
+                      <Key className="w-4.5 h-4.5" /> Save New Password
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {activeSection === "instagram" && (
+                <div className={`border rounded-[32px] p-6 md:p-8 shadow-2xl transition-all duration-500 relative overflow-hidden ${
+                  theme === "dark" ? "bg-[#080B12]/80 border-slate-800/80 text-slate-100" : "bg-white border-slate-200 shadow-md text-slate-950"
+                }`}>
+                  
+                  {/* Instagram Header Area */}
+                  <div className={`flex flex-col md:flex-row items-center md:items-start gap-8 border-b pb-8 select-none ${
+                    theme === "dark" ? "border-slate-800/60" : "border-slate-100"
+                  }`}>
+                    
+                    {/* Profile Picture with story gradient border */}
+                    <div className="flex-shrink-0 relative">
+                      <div className="w-[124px] h-[124px] instagram-story-ring flex items-center justify-center shadow-lg">
+                        <div className={`w-[116px] h-[116px] rounded-full overflow-hidden border-[4px] relative ${
+                          theme === "dark" ? "border-slate-950 bg-slate-900" : "border-white bg-slate-100"
+                        }`}>
+                          <img
+                            src={avatar}
+                            alt={name}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats & Controls */}
+                    <div className="flex-1 flex flex-col items-center md:items-start gap-4">
+                      
+                      {/* Name & Buttons Row */}
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <h2 className="text-xl font-bold tracking-tight">{username}</h2>
+                          
+                          {/* Verified Badge */}
+                          <svg className="w-[18px] h-[18px] text-sky-500 fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                          </svg>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveSection("profile")}
+                            className={`instagram-btn-secondary ${
+                              theme === "dark" ? "instagram-btn-secondary-dark" : ""
+                            }`}
+                          >
+                            Edit Profile
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`http://localhost:3000/profile/${username}`);
+                              setToast("Profile URL copied! 🔗");
+                              setTimeout(() => setToast(null), 2000);
+                            }}
+                            className={`instagram-btn-secondary ${
+                              theme === "dark" ? "instagram-btn-secondary-dark" : ""
+                            }`}
+                          >
+                            Share Profile
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Stats Row */}
+                      <div className={`flex gap-8 text-sm ${
+                        theme === "dark" ? "text-slate-300" : "text-slate-800"
+                      }`}>
+                        <div><span className="font-extrabold">9</span> posts</div>
+                        <div><span className="font-extrabold">1.4K</span> followers</div>
+                        <div><span className="font-extrabold">380</span> following</div>
+                      </div>
+
+                      {/* Bio Details */}
+                      <div className="text-center md:text-left space-y-1">
+                        <h3 className="font-bold text-sm leading-tight">{name}</h3>
+                        <p className={`text-xs uppercase tracking-wide font-bold ${
+                          theme === "dark" ? "text-slate-500" : "text-slate-700"
+                        }`}>CREATIVE DEVELOPER</p>
+                        <p className={`text-xs max-w-[420px] leading-relaxed whitespace-pre-line ${
+                          theme === "dark" ? "text-slate-300" : "text-slate-800"
+                        }`}>{bio}</p>
+                        <a 
+                          href={`mailto:${email}`}
+                          className="text-xs font-semibold text-blue-600 dark:text-sky-400 hover:underline block"
+                        >
+                          {email}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Highlights section */}
+                  <div className={`py-6 border-b flex gap-6 overflow-x-auto scrollbar-thin select-none ${
+                    theme === "dark" ? "border-slate-200/10" : "border-slate-100"
+                  }`}>
+                    {[
+                      { label: "Designs 🎨", emoji: "🎨", color: "from-purple-500 to-indigo-500" },
+                      { label: "Travel ✈️", emoji: "✈️", color: "from-cyan-500 to-blue-500" },
+                      { label: "Coding 💻", emoji: "💻", color: "from-amber-500 to-orange-500" },
+                      { label: "Music 🎵", emoji: "🎵", color: "from-pink-500 to-rose-500" },
+                      { label: "Memories 📸", emoji: "📸", color: "from-teal-500 to-emerald-500" }
+                    ].map((hl, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                        <div className={`w-14 h-14 rounded-full p-[2px] border ${
+                          theme === "dark" ? "border-slate-800" : "border-slate-200"
+                        }`}>
+                          <div className={`w-full h-full rounded-full bg-gradient-to-tr ${hl.color} flex items-center justify-center text-lg shadow-inner shadow-black/20 hover:scale-105 active:scale-95 transition cursor-pointer`}>
+                            {hl.emoji}
+                          </div>
+                        </div>
+                        <span className={`text-[10px] font-bold ${
+                          theme === "dark" ? "text-slate-400" : "text-slate-800"
+                        }`}>{hl.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Post Grid Tab Bar */}
+                  <div className={`flex justify-center border-b select-none ${
+                    theme === "dark" ? "border-slate-200/10" : "border-slate-100"
+                  }`}>
+                    <div className="flex gap-12 text-xs font-bold tracking-widest uppercase">
+                      <button className={`flex items-center gap-1.5 py-4 border-t-2 -mt-[1px] transition-colors duration-300 ${
+                        theme === "dark" ? "border-slate-100 text-slate-100" : "border-slate-900 text-slate-900"
+                      }`}>
+                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="14" width="7" height="7"></rect>
+                          <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>POSTS</span>
+                      </button>
+                      <button className={`flex items-center gap-1.5 py-4 transition-colors duration-300 ${
+                        theme === "dark" ? "text-slate-500 hover:text-slate-350" : "text-slate-500 hover:text-slate-850"
+                      } opacity-60 hover:opacity-100`}>
+                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                        <span>REELS</span>
+                      </button>
+                      <button className={`flex items-center gap-1.5 py-4 transition-colors duration-300 ${
+                        theme === "dark" ? "text-slate-500 hover:text-slate-350" : "text-slate-500 hover:text-slate-850"
+                      } opacity-60 hover:opacity-100`}>
+                        <svg className="w-4 h-4 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>SAVED</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3x3 Media Post Grid */}
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-3 pt-6">
+                    {MOCK_POSTS.map((url, index) => (
+                      <div key={index} className="aspect-square w-full rounded-xl overflow-hidden relative bg-slate-900 border border-slate-200/10 group/post shadow-sm">
+                        <img
+                          src={url}
+                          alt={`Post ${index + 1}`}
+                          className="object-cover w-full h-full instagram-post-zoom"
+                        />
+                        
+                        {/* Hover Overlay showing stats */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/post:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white text-sm.5 font-bold select-none pointer-events-none">
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-5 h-5 fill-white stroke-none" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+                            </svg>
+                            <span>{Math.floor(Math.random() * 200) + 50}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <svg className="w-5 h-5 fill-white stroke-none" viewBox="0 0 24 24">
+                              <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"></path>
+                            </svg>
+                            <span>{Math.floor(Math.random() * 30) + 5}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              )}
+
+              <div className={`block lg:hidden border rounded-[28px] p-5 shadow-xl transition-all duration-500 overflow-hidden relative ${
+                isDark ? "bg-[#080B12]/80 border-slate-800/80" : "bg-white border-slate-200 shadow-md"
+              }`}>
+                <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-cyan-500/5 rounded-full blur-[20px] pointer-events-none" />
+
+                <div className="flex items-center gap-2 mb-4">
+                  <Award className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-xs font-extrabold uppercase text-slate-350 tracking-wider">Security Health</h3>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="relative w-18 h-18 rounded-full border-4 border-slate-800 flex items-center justify-center flex-shrink-0">
+                    <div className="absolute inset-0 rounded-full border-4 border-cyan-400 transition-all duration-500" style={{ clipPath: `polygon(0 0, 100% 0, 100% ${securityScore}%, 0 ${securityScore}%)` }} />
+                    <span className="text-base font-black">{securityScore}%</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="text-xs.5 font-bold tracking-wide">
+                      {securityScore === 100 ? "Highly Shielded! 🔒" : "Enhancement Recommended"}
+                    </h4>
+                    <p className="text-[10px] text-slate-400 leading-normal">
+                      {securityScore === 100 ? "Your account profile details are fully setup with robust configurations." : "Set a strong password and enable 2-Factor Authentication to reach 100% protection."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-slate-850/50 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
+                    <span className="text-[11px] font-bold">2-Factor Authentication</span>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTwoFactor(!twoFactor);
+                      setToast(twoFactor ? "Two-Factor Auth Disabled 🔓" : "Two-Factor Auth Enabled 🔒");
+                      setTimeout(() => setToast(null), 2500);
+                    }}
+                    className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-300 relative ${
+                      twoFactor ? "bg-cyan-500" : "bg-slate-800"
+                    }`}
+                  >
+                    <div className={`w-4.5 h-4.5 rounded-full bg-slate-950 transition-transform duration-300 ${
+                      twoFactor ? "translate-x-4.5 bg-white" : "translate-x-0"
+                    }`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center text-[10.5px] text-slate-500 select-none z-10">
+          Secure Settings Hub. Encrypted using SHA-256 protocols. Powered by Next.js.
+        </div>
+      </main>
+    );
+  }
+
+  // --- DEFAULT VIEW: CHATROOM ---
+  return (
+    <div className={`w-full h-screen max-h-screen text-slate-800 flex flex-col font-sans antialiased overflow-hidden ${
+      theme === "black" 
+        ? "bg-black text-slate-100 black-theme" 
+        : theme === "dark" 
+          ? "bg-slate-950 text-slate-100" 
+          : "bg-white text-slate-800"
+    }`}>
+      
+      {/* 1. TOP CHATGROUP NAVBAR */}
+      <header className={`h-[60px] border-b px-6 flex items-center justify-between z-50 flex-shrink-0 ${
+        theme === "black"
+          ? "bg-black border-neutral-900"
+          : isDark 
+            ? "bg-slate-900 border-slate-800" 
+            : "bg-white border-slate-200"
+      }`}>
+        
+        {/* Left Branding */}
+        <div className="flex items-center gap-2.5 select-none">
+          <svg className="w-6.5 h-6.5 text-sky-500 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2C6.477 2 2 6.119 2 11.2c0 2.925 1.458 5.519 3.743 7.151l-.736 2.946a.75.75 0 001.087.828l3.414-1.707c.803.18 1.637.282 2.492.282 5.523 0 10-4.119 10-9.2C22 6.119 17.523 2 12 2zm1 13h-2v-2h2v2zm0-4h-2V7h2v4z" />
+          </svg>
+          <span className="text-[19px] font-extrabold tracking-tight bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            ChatGroup
+          </span>
+        </div>
+
+        {/* Center Search bar */}
+        {currentUser && (
+          <div className={`hidden md:flex w-[260px] h-[36px] border rounded-lg items-center px-3 gap-2 ${
+            theme === "black"
+              ? "bg-[#0a0a0a] border-neutral-800"
+              : isDark 
+                ? "bg-slate-950 border-slate-800" 
+                : "bg-slate-100 border-slate-200"
+          }`}>
+            <svg className="w-4.5 h-4.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent text-sm w-full outline-none text-slate-400 placeholder-slate-450 font-normal"
+            />
+          </div>
+        )}
+
+        {/* Right Nav Icons / Theme Toggle (if not logged in) */}
+        <div className="flex items-center gap-5">
+          {currentUser ? (
+            <>
+              {/* Search Icon */}
+              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+                </svg>
+              </button>
+              
+              {/* Direct Messages Icon */}
+              <button className="text-slate-500 hover:text-slate-800 transition-colors relative">
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+                <span className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold flex items-center justify-center text-white">1</span>
+              </button>
+
+              {/* Settings gear icon */}
+              <button 
+                onClick={() => {
+                  setName(currentUser.username);
+                  setUsername(currentUser.username);
+                  setBio(currentUser.bio || "");
+                  setAvatar(currentUser.avatarUrl);
+                  setCurrentView("settings");
+                }}
+                className="text-slate-500 hover:text-slate-800 transition-colors"
+                title="Settings Dashboard"
+              >
+                <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+
+              {/* Home Icon */}
+              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+              </button>
+
+              {/* Notifications Heart */}
+              <button className="text-slate-500 hover:text-slate-800 transition-colors hidden sm:block">
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+              </button>
+
+              {/* Logged in user avatar */}
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.username}
+                className="w-7 h-7 rounded-full object-cover border border-slate-200 active:scale-95 transition-transform"
+              />
+            </>
+          ) : (
+            /* Theme Toggle Button for Logged-Out Users */
+            <button
+              onClick={() => setTheme(prev => {
+                if (prev === "light") return "dark";
+                if (prev === "dark") return "black";
+                return "light";
+              })}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                theme === "black"
+                  ? "bg-[#121212] border-neutral-900 text-amber-400 hover:bg-neutral-900"
+                  : isDark
+                    ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-850"
+                    : "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-sm"
+              }`}
+              title={`Toggle Theme (Current: ${theme === "black" ? "OLED Black" : theme === "dark" ? "Dark Mode" : "Light Mode"})`}
+            >
+              {theme === "black" ? (
+                <Sun className="w-4 h-4" />
+              ) : theme === "dark" ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* 2. AUTH / LOGOUT / REGISTER CONTAINER */}
+      {!currentUser ? (
+        <div className={`flex-1 flex items-center justify-center p-6 transition-all duration-500 relative overflow-hidden ${
           theme === "black"
             ? "bg-black text-slate-100 black-theme"
             : isDark ? "bg-slate-950 text-slate-100" : "bg-[#f8fafc]"
@@ -58,7 +2068,23 @@
               </button>
             </div>
 
-            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/10 mb-4 text-white">\n              <svg className="w-7 h-7 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />\n              </svg>\n            </div>\n\n            <h2 className={`text-xl font-extrabold tracking-wide mb-1 ${isDark ? "text-slate-100" : "text-slate-800"}`}>\n              {authMode === "register" ? "Create Account" : "Welcome Back"}\n            </h2>\n            <p className="text-[12px] text-slate-400 text-center mb-5 leading-relaxed">\n              {authMode === "register" \n                ? "Register a username and password to start chatting in real-time."\n                : "Enter your username/email and password to join your server chat."\n              }\n            </p>\n\n            {authMode === "register" ? (
+            <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/10 mb-4 text-white">
+              <svg className="w-7 h-7 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </div>
+
+            <h2 className={`text-xl font-extrabold tracking-wide mb-1 ${isDark ? "text-slate-100" : "text-slate-800"}`}>
+              {authMode === "register" ? "Create Account" : "Welcome Back"}
+            </h2>
+            <p className="text-[12px] text-slate-400 text-center mb-5 leading-relaxed">
+              {authMode === "register" 
+                ? "Register a username and password to start chatting in real-time."
+                : "Enter your username/email and password to join your server chat."
+              }
+            </p>
+
+            {authMode === "register" ? (
               <form onSubmit={handleRegister} className="w-full flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-left">Select Profile Face</span>
@@ -76,18 +2102,31 @@
                       </button>
                     ))}
                   </div>
-                </div>\n                </div>\n\n                <div className="flex flex-col gap-1.5 text-left">
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-left">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-0.5">Username</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
                       <UserIcon className="w-4 h-4" />
-                    </span>\n                  <input\n                    type="text"\n                    maxLength={18}\n                    value={regUsername}\n                    onChange={(e) => setRegUsername(e.target.value)}\n                    placeholder="e.g. Ann"\n                    className={`w-full pl-11 pr-4 py-3 border rounded-xl outline-none text-xs.5 font-medium transition-all ${
-                      theme === "black"
-                        ? "bg-black border-neutral-900 text-white placeholder-slate-700 focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10"
-                        : isDark 
-                          ? "bg-slate-950/60 border-slate-800 text-white placeholder-slate-700 focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
-                          : "bg-slate-50/80 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
-                    }`}\n                    }`}\n                    required\n                  />\n                </div>\n                </div>
+                    </span>
+                    <input
+                      type="text"
+                      maxLength={18}
+                      value={regUsername}
+                      onChange={(e) => setRegUsername(e.target.value)}
+                      placeholder="e.g. Ann"
+                      className={`w-full pl-11 pr-4 py-3 border rounded-xl outline-none text-xs.5 font-medium transition-all ${
+                        theme === "black"
+                          ? "bg-black border-neutral-900 text-white placeholder-slate-700 focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10"
+                          : isDark 
+                            ? "bg-slate-950/60 border-slate-800 text-white placeholder-slate-700 focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/10" 
+                            : "bg-slate-50/80 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-400/10"
+                      }`}
+                      required
+                    />
+                  </div>
+                </div>
 
                 <div className="flex flex-col gap-1.5 text-left">
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-0.5">Email Address</label>
@@ -233,4 +2272,632 @@
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
               Sign in with Google
-            </button>\n          </div>\n        </div>\n      ) : (\n        /* MAIN 3-COLUMN FLEXBOARD VIEWPORT */\n        <div className="flex-1 flex overflow-hidden w-full relative">\n          \n          {/* COLUMN 1: LEFT SIDEBAR MESSAGES LIST (350px) */}\n          <section \n            className={`border-r flex flex-col flex-shrink-0 transition-all duration-300 ${\n              isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n            } ${\n              activeContact \n                ? "hidden md:flex w-[350px] h-full" \n                : "w-full md:w-[350px] h-full"\n            }`}\n          >\n            <div className="p-4 flex flex-col gap-3 border-b border-slate-100/10">\n              <div className={`w-full h-[36px] border rounded-lg flex items-center px-3 gap-2 ${\n                isDark ? "bg-slate-950 border-slate-850" : "bg-slate-50 border-slate-200"\n              }`}>\n                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />\n                </svg>\n                <input\n                  type="text"\n                  placeholder="Search..."\n                  value={searchQuery}\n                  onChange={(e) => setSearchQuery(e.target.value)}\n                  className="bg-transparent text-sm w-full outline-none text-slate-400 placeholder-slate-500 font-normal"\n                />\n              </div>\n              \n              <div className="flex justify-between items-center text-xs text-slate-450 font-bold tracking-wide">\n                <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-650">\n                  <span>Latest First</span>\n                  <svg className="w-3 h-3 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />\n                  </svg>\n                </div>\n                \n                <button \n                  onClick={handleLogout}\n                  className="w-6 h-6 rounded-full bg-sky-500 hover:bg-sky-400 text-white flex items-center justify-center active:scale-90 transition-transform shadow-md"\n                  title="Logout / Exit Session"\n                >\n                  <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />\n                  </svg>\n                </button>\n              </div>\n            </div>\n\n            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">\n              {filteredContacts.length === 0 ? (\n                <div className="p-8 text-center text-slate-500 text-xs">No contacts found</div>\n              ) : (\n                filteredContacts.map((user) => {\n                  const isOnline = onlineUsers[user.username] === "online";\n                  const isAway = onlineUsers[user.username] === "away";\n                  const isTyping = typingUsers[user.username];\n                  const isActive = activeContact?.username === user.username;\n                  const lastMsg = getLastMessage(user.username);\n                  \n                  const hasMockBadge = (user.username === "Paul Osmand" || user.username === "Edward Davis") && !lastMsg;\n\n                  return (\n                    <button\n                      key={user.username}\n                      onClick={() => setActiveContact(user)}\n                      className={`w-full p-3.5 flex items-center gap-3.5 rounded-xl hover-scale relative ${\n                        isActive\n                          ? isDark ? "bg-slate-800" : "bg-slate-100"\n                          : isDark ? "hover:bg-slate-800/40" : "hover:bg-slate-50"\n                      }`}\n                    >\n                      <div className="relative flex-shrink-0">\n                        <div className={`w-[52px] h-[52px] rounded-full overflow-hidden p-[2.5px] ${\n                          isActive ? "insta-gradient-border" : isDark ? "border border-slate-800" : "border border-slate-200"\n                        }`}>\n                          <img \n                            src={user.avatarUrl} \n                            className={`w-full h-full rounded-full object-cover border ${\n                              isDark ? "border-slate-900" : "border-white"\n                            }`} \n                          />\n                        </div>\n                        \n                        <span className={`absolute top-0.5 right-0.5 w-3 h-3 rounded-full border-2 ${\n                          isDark ? "border-slate-900" : "border-white"\n                        } ${\n                          isTyping ? "bg-amber-400 animate-pulse" :\n                          isOnline ? "bg-emerald-500 pulse-online" :\n                          isAway ? "bg-amber-500" : "bg-slate-400"\n                        }`} />\n                      </div>\n                      \n                      <div className="flex-1 text-left min-w-0">\n                        <div className="flex justify-between items-center mb-0.5">\n                          <span className={`text-[13.5px] font-bold tracking-wide truncate ${\n                            isDark ? "text-slate-200" : "text-slate-700"\n                          }`}>\n                            {user.username.toUpperCase()}\n                          </span>\n                          {lastMsg ? (\n                            <span className="text-[10px] text-slate-450 font-semibold">{lastMsg.time}</span>\n                          ) : (\n                            <span className="text-[10px] text-slate-450 font-medium">08:04 AM</span>\n                          )}\n                        </div>\n                        \n                        <p className="text-[11.5px] text-slate-500 truncate leading-snug">\n                          {isTyping ? (\n                            <span className="text-purple-500 font-bold animate-pulse">typing...</span>\n                          ) : lastMsg ? (\n                            lastMsg.text || "📷 Photo attachment"\n                          ) : (\n                            user.statusText || "Start DM"\n                          )}\n                        </p>\n                      </div>\n\n                      {hasMockBadge && (\n                        <span className="absolute right-4 w-4.5 h-4.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-[10px] font-black text-white flex items-center justify-center select-none shadow">\n                          1\n                        </span>\n                      )}\n                    </button>\n                  );\n                })\n              )}\n            </div>\n          </section>\n\n          {/* COLUMN 2: MIDDLE PANE - ACTIVE DIRECT MESSAGE STREAM */}\n          <main \n            className={`flex-1 flex flex-col border-r transition-all duration-300 ${\n              isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"\n            } ${\n              !activeContact \n                ? "hidden md:flex h-full items-center justify-center text-center p-8" \n                : "flex h-full"\n            }`}\n          >\n            {activeContact ? (\n              <>\n                {/* Active Chat Header */}\n                <header className={`h-[60px] px-6 border-b flex items-center justify-between flex-shrink-0 z-40 select-none ${\n                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n                }`}>\n                  <div className="flex items-center gap-3">\n                    <button \n                      onClick={() => setActiveContact(null)}\n                      className="md:hidden p-1.5 rounded-full text-slate-500 hover:text-slate-800 active:scale-95"\n                    >\n                      <svg className="w-5 h-5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />\n                      </svg>\n                    </button>\n\n                    <div className="relative">\n                      <img\n                        src={activeContact.avatarUrl}\n                        alt={activeContact.username}\n                        className="w-9 h-9 rounded-full object-cover border border-slate-200"\n                      />\n                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white ${\n                        typingUsers[activeContact.username] ? "bg-amber-400 animate-pulse" :\n                        onlineUsers[activeContact.username] === "online" ? "bg-emerald-500" :\n                        onlineUsers[activeContact.username] === "away" ? "bg-amber-500" : "bg-slate-400"\n                      }`} />\n                    </div>\n                    <div>\n                      <h3 className={`text-sm font-bold tracking-wide ${isDark ? "text-slate-100" : "text-slate-800"}`}>{activeContact.username}</h3>\n                      <p className="text-[10px] text-slate-400 font-semibold tracking-wide">\n                        {typingUsers[activeContact.username] ? "typing..." : "Active now"}\n                      </p>\n                    </div>\n                  </div>\n\n                  <button \n                    onClick={() => setIsDetailPaneOpen((prev) => !prev)}\n                    className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100/10 text-slate-400 hover:text-slate-700 transition-all active:scale-90 ${\n                      isDetailPaneOpen ? "bg-slate-100/10 text-slate-300" : ""\n                    }`}\n                  >\n                    <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />\n                    </svg>\n                  </button>\n                </header>\n\n                {/* Message feeds stream */}\n                <div className={`flex-1 overflow-y-auto px-6 py-6 space-y-5 custom-scrollbar flex flex-col ${\n                  isDark ? "bg-slate-950" : "bg-white"\n                }`}>\n                  \n                  {/* Sync info banner */}\n                  <div className="w-full bg-indigo-50/5 border border-indigo-500/10 rounded-xl p-3 flex items-center justify-between text-xs text-indigo-400 gap-3 shadow-sm select-none animate-chat-bubble flex-shrink-0">\n                    <div className="flex items-center gap-2.5">\n                      <span className="relative flex h-2 w-2">\n                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>\n                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>\n                      </span>\n                      <span><b>Real-time Sync Active</b>: Open this site in another tab to chat live.</span>\n                    </div>\n                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider bg-indigo-500/10 px-2 py-0.5 rounded">Tab Sync</span>\n                  </div>\n\n                  {conversationMessages.map((msg) => {\n                    const isMe = msg.sender === currentUser.username;\n                    \n                    return (\n                      <div\n                        key={msg.id}\n                        className={`flex w-full items-end gap-2.5 ${\n                          isMe ? "justify-end" : "justify-start"\n                        } ${msg.isNew ? "animate-chat-bubble" : ""}`}\n                      >\n                        {!isMe && (\n                          <img\n                            src={activeContact.avatarUrl}\n                            alt={activeContact.username}\n                            className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 select-none mb-1"\n                          />\n                        )}\n\n                        <div className="flex flex-col max-w-[70%]">\n                          <div\n                            className={`px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed shadow-sm break-words relative ${\n                              isMe\n                                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-sm bubble-shadow-me"\n                                : isDark \n                                  ? "bg-slate-800 text-slate-100 rounded-bl-sm bubble-shadow-them"\n                                  : "bg-slate-100 text-slate-800 rounded-bl-sm bubble-shadow-them"\n                            }`}\n                          >\n                            {msg.text && <p className="font-normal">{msg.text}</p>}\n                            \n                            {msg.imageUrl && (\n                              <img\n                                src={msg.imageUrl}\n                                alt="Attachment"\n                                className="rounded-lg max-h-[220px] object-cover mt-1 select-none border border-slate-700/20"\n                              />\n                            )}\n\n                            <div className="flex items-center justify-end mt-1 text-[9px] font-semibold select-none">\n                              <span className={isMe ? "text-white/80" : "text-slate-400"}>{msg.time}</span>\n                              {isMe && msg.status && renderCheckmarks(msg.status)}\n                            </div>\n                          </div>\n                        </div>\n\n                        {isMe && (\n                          <img\n                            src={currentUser.avatarUrl}\n                            alt={currentUser.username}\n                            className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 select-none mb-1"\n                          />\n                        )}\n                      </div>\n                    );\n                  })}\n\n                  {/* typing status indicator visual overlay */}\n                  {typingUsers[activeContact.username] && (\n                    <div className="flex w-full items-end gap-2.5 justify-start animate-chat-bubble">\n                      <img\n                        src={activeContact.avatarUrl}\n                        alt={activeContact.username}\n                        className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 mb-1"\n                      />\n                      <div className={`px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5 shadow-sm ${\n                        isDark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-800"\n                      }`}>\n                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "0ms" }} />\n                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "150ms" }} />\n                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "300ms" }} />\n                      </div>\n                    </div>\n                  )}\n\n                  <div ref={messagesEndRef} />\n                </div>\n\n                {/* Footer input box */}\n                <footer className={`p-4 border-t flex items-center gap-3 select-none flex-shrink-0 ${\n                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n                }`}>\n                  <button \n                    onClick={handleSendMockImage}\n                    title="Send photography media"\n                    className="p-1.5 rounded-full text-slate-500 hover:text-slate-850 hover:bg-slate-100/10 transition-all active:scale-90"\n                  >\n                    <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">\n                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />\n                    </svg>\n                  </button>\n\n                  {/* Emoji Picker Popover Wrapper */}\n                  <div className="relative" ref={emojiPickerRef}>\n                    <button \n                      onClick={() => setIsEmojiPickerOpen((prev) => !prev)}\n                      title="Insert emoji"\n                      className={`p-1.5 rounded-full hover:bg-slate-100/10 transition-all active:scale-90 ${\n                        isEmojiPickerOpen ? "text-sky-500 bg-slate-100/10" : "text-slate-500 hover:text-slate-850"\n                      }`}\n                    >\n                      <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">\n                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />\n                      </svg>\n                    </button>\n\n                    {isEmojiPickerOpen && (\n                      <div className={`absolute bottom-[52px] left-0 w-[270px] border rounded-2xl p-3 shadow-xl flex flex-col z-50 animate-chat-bubble select-none ${\n                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n                      }`}>\n                        <div className="flex justify-between items-center border-b border-slate-100/10 pb-2 mb-2">\n                          {EMOJI_CATEGORIES.map((cat) => (\n                            <button\n                              type="button"\n                              key={cat.name}\n                              onClick={() => setActiveEmojiCategory(cat.name)}\n                              title={cat.name}\n                              className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all active:scale-95 ${\n                                activeEmojiCategory === cat.name ? "bg-slate-100/10 text-slate-300" : "opacity-50 hover:opacity-100"\n                              }`}\n                            >\n                              {cat.icon}\n                            </button>\n                          ))}\n                        </div>\n\n                        <div className="grid grid-cols-7 gap-1.5 overflow-y-auto max-h-[140px] custom-scrollbar p-1">\n                          {EMOJI_CATEGORIES.find((c) => c.name === activeEmojiCategory)?.list.map((emoji) => (\n                            <button\n                              type="button"\n                              key={emoji}\n                              onClick={() => setInputText((prev) => prev + emoji)}\n                              className="w-8 h-8 flex items-center justify-center text-[18px] hover:bg-slate-100/10 active:scale-90 rounded-lg transition-all"\n                            >\n                              {emoji}\n                            </button>\n                          ))}\n                        </div>\n                      </div>\n                    )}\n                  </div>\n\n                  <div className={`flex-1 h-[44px] px-4 border transition-colors rounded-full flex items-center ${\n                    isDark ? "bg-slate-950 border-slate-800 focus-within:border-slate-700" : "bg-slate-50 border-slate-200 focus-within:border-slate-300"\n                  }`}>\n                    <input\n                      type="text"\n                      value={inputText}\n                      onChange={(e) => {\n                        setInputText(e.target.value);\n                        handleUserTyping(e.target.value.length);\n                      }}\n                      onKeyDown={(e) => {\n                        if (e.key === "Enter") {\n                          e.preventDefault();\n                          handleSendMessage();\n                        }\n                      }}\n                      placeholder="Message..."\n                      className={`bg-transparent text-sm w-full outline-none font-normal ${\n                        isDark ? "text-slate-100 placeholder-slate-600" : "text-slate-800 placeholder-slate-400"\n                      }`}\n                    />\n                  </div>\n\n                  <button \n                    onClick={() => {\n                      setInputText("Listening...");\n                      setTimeout(() => setInputText("I'm skating tonight!"), 1500);\n                    }}\n                    className="p-1.5 rounded-full text-slate-500 hover:text-slate-850 hover:bg-slate-100/10 transition-all active:scale-90"\n                  >\n                    <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">\n                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />\n                    </svg>\n                  </button>\n\n                  <button\n                    onClick={() => handleSendMessage()}\n                    className={`w-[40px] h-[40px] rounded-full flex items-center justify-center transition-all ${\n                      inputText.trim()\n                        ? "insta-send-gradient hover:opacity-90 active:scale-90 text-white shadow-md"\n                        : "bg-slate-100/10 text-slate-550 cursor-not-allowed"\n                    }`}\n                    disabled={!inputText.trim()}\n                  >\n                    <svg className="w-[16px] h-[16px] rotate-45 -translate-x-[1px] stroke-[2.8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />\n                    </svg>\n                  </button>\n                </footer>\n              </>\n            ) : (\n              <div className={`flex-1 flex flex-col items-center justify-center text-center p-8 select-none ${\n                isDark ? "bg-slate-950" : "bg-slate-50"\n              }`}>\n                <div className={`w-20 h-20 rounded-full border flex items-center justify-center text-slate-400 mb-4 shadow-sm ${\n                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n                }`}>\n                  <svg className="w-10 h-10 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />\n                  </svg>\n                </div>\n                <h2 className="text-[17px] font-bold text-slate-500 uppercase tracking-widest">Your Messages</h2>\n                <p className="text-[12px] text-slate-450 max-w-[240px] mt-2 leading-relaxed">\n                  Send private messages and media photos to a friend or group. Select a conversation to start.\n                </p>\n              </div>\n            )}\n          </main>\n\n          {/* COLUMN 3: RIGHT PANEL - CONTACT DETAIL INFO DISPLAY (320px) */}\n          {activeContact && isDetailPaneOpen && (\n            <aside \n              className={`w-full lg:w-[320px] border-l flex flex-col items-center p-6 text-center select-none z-45 animate-chat-bubble absolute lg:static top-0 right-0 h-full lg:h-auto shadow-2xl lg:shadow-none ${\n                isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"\n              }`}\n            >\n              <button \n                onClick={() => setIsDetailPaneOpen(false)}\n                className="lg:hidden absolute top-4 right-4 p-2 text-slate-450 hover:text-slate-800"\n              >\n                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n              </button>\n\n              <div className="relative mt-8 mb-5 select-none">\n                <div className="w-[120px] h-[120px] rounded-full overflow-hidden border border-slate-200 p-[3px] shadow-sm">\n                  <img\n                    src={activeContact.avatarUrl}\n                    alt={activeContact.username}\n                    className="w-full h-full object-cover rounded-full"\n                  />\n                </div>\n              </div>\n\n              <h2 className={`text-[18px] font-black tracking-wide mb-0.5 ${isDark ? "text-slate-200" : "text-slate-800"}`}>\n                {activeContact.username.toUpperCase()}\n              </h2>\n              <p className={`text-[11px] font-extrabold tracking-widest uppercase mb-4 ${\n                theme === "dark" ? "text-slate-400" : "text-slate-700"\n              }`}>\n                {activeContact.category || "MEMBER"}\n              </p>\n\n              <p className={`text-[12px] leading-relaxed max-w-[240px] mb-6 font-medium ${\n                theme === "dark" ? "text-slate-400" : "text-slate-700"\n              }`}>\n                {activeContact.bio || "No profile biography available yet."}\n              </p>\n\n              <button className="px-5 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 font-bold text-white active:scale-95 transition-all text-xs tracking-wide shadow-md">\n                VIEW PROFILE\n              </button>\n\n              <div className="flex gap-4 mt-auto pt-8 select-none">\n                <button className={`w-[52px] h-[52px] rounded-full text-slate-500 flex items-center justify-center active:scale-90 transition-all shadow-sm ${\n                  isDark ? "bg-slate-850 hover:bg-slate-800" : "bg-slate-100 hover:bg-slate-200"\n                }`}>\n                  <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />\n                  </svg>\n                </button>\n                <button className={`w-[52px] h-[52px] rounded-full text-slate-500 flex items-center justify-center active:scale-90 transition-all shadow-sm ${\n                  isDark ? "bg-slate-850 hover:bg-slate-800" : "bg-slate-100 hover:bg-slate-200"\n                }`}>\n                  <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.557-5.118-3.851-6.674-6.674l1.293-.97c.362-.272.528-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />\n                  </svg>\n                </button>\n              </div>\n            </aside>\n          )}\n\n        </div>\n      )}\n\n      {isGoogleModalOpen && (\n        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">\n          <div className={`w-full max-w-[400px] mx-4 rounded-2xl shadow-2xl p-6 border transition-all ${\n            isDark \n              ? "bg-slate-950 border-slate-800 text-slate-100" \n              : "bg-white border-slate-200 text-slate-850"\n          }`}>\n            {/* Modal Header */}\n            <div className="flex justify-between items-center mb-4">\n              <div className="flex items-center gap-2">\n                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">\n                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>\n                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>\n                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>\n                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>\n                </svg>\n                <span className="font-bold text-sm">Sign in with Google</span>\n              </div>\n              <button \n                onClick={() => !isSigningInWithGoogle && setIsGoogleModalOpen(false)}\n                className={`p-1 rounded-full hover:bg-slate-100/10 cursor-pointer ${isSigningInWithGoogle ? "opacity-30 cursor-not-allowed" : ""}`}\n                disabled={isSigningInWithGoogle}\n              >\n                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n              </button>\n            </div>\n\n            {/* Modal Body */}\n            {isSigningInWithGoogle ? (\n              <div className="flex flex-col items-center justify-center py-10 gap-4">\n                <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>\n                <div className="text-center">\n                  <p className="text-sm font-semibold">Signing in...</p>\n                  <p className="text-xs text-slate-400 mt-1">Connecting to Google services</p>\n                </div>\n              </div>\n            ) : (\n              <div className="space-y-4">\n                <p className="text-xs text-slate-450">Choose a Google Account to continue to ChatGroup.</p>\n                \n                {/* Mock Accounts List */}\n                <div className="space-y-2">\n                  {[\n                    {\n                      name: "Krupali Bathani",\n                      email: "krupali.bathani@gmail.com",\n                      avatar: PRESET_AVATARS[0]\n                    },\n                    {\n                      name: "Om Gadhiya",\n                      email: "omgadhiya97@gmail.com",\n                      avatar: "/om_gadhiya.png"\n                    },\n                    {\n                      name: "David Williams",\n                      email: "david.williams@gmail.com",\n                      avatar: "/david_williams.png"\n                    }\n                  ].map((acc, index) => (\n                    <button\n                      key={index}\n                      onClick={() => handleGoogleSignIn(acc.name, acc.email, acc.avatar)}\n                      className={`w-full p-3 border rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer text-left ${\n                        isDark \n                          ? "border-slate-800 hover:bg-slate-900 bg-slate-950" \n                          : "border-slate-200 hover:bg-slate-50 bg-white"\n                      }`}\n                    >\n                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-slate-200">\n                        {acc.avatar.startsWith("/") ? (\n                          <img src={acc.avatar} className="w-full h-full object-cover" onError={(e) => {\n                            e.currentTarget.src = PRESET_AVATARS[index];\n                          }} />\n                        ) : (\n                          <img src={acc.avatar} className="w-full h-full object-cover" />\n                        )}\n                      </div>\n                      <div className="flex-1 min-w-0">\n                        <p className="text-sm font-bold truncate">{acc.name}</p>\n                        <p className="text-xs text-slate-400 truncate">{acc.email}</p>\n                      </div>\n                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />\n                      </svg>\n                    </button>\n                  ))}\n                </div>\n\n                {/* Separator / Custom Email option */}\n                <div className="flex items-center my-3 w-full">\n                  <div className={`flex-grow border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}></div>\n                  <span className={`mx-3 text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-600" : "text-slate-400"}`}>or</span>\n                  <div className={`flex-grow border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}></div>\n                </div>\n\n                {/* Custom Google Account Input */}\n                <form \n                  onSubmit={(e) => {\n                    e.preventDefault();\n                    if (!googleCustomEmail.trim()) return;\n                    const email = googleCustomEmail.trim().toLowerCase();\n                    const prefix = email.split("@")[0];\n                    const formattedName = prefix\n                      .split(/[\._\-]+/)\n                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))\n                      .join(" ");\n                    const randomAvatar = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];\n                    handleGoogleSignIn(formattedName, email, randomAvatar);\n                  }}\n                  className="space-y-3"\n                >\n                  <div className="flex flex-col gap-1.5">\n                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Use custom email</label>\n                    <input\n                      type="email"\n                      required\n                      placeholder="e.g. yourname@gmail.com"\n                      value={googleCustomEmail}\n                      onChange={(e) => setGoogleCustomEmail(e.target.value)}\n                      className={`w-full px-4 py-2 border rounded-xl outline-none text-xs font-semibold shadow-sm transition-colors ${\n                        isDark \n                          ? "bg-slate-900 border-slate-800 text-white placeholder-slate-650 focus:border-sky-500/50" \n                          : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-sky-500/50"\n                      }`}\n                    />\n                  </div>\n                  <button\n                    type="submit"\n                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 font-bold text-white rounded-xl shadow-md transition-all text-xs active:scale-95 cursor-pointer dark:bg-sky-600 dark:hover:bg-sky-500"\n                  >\n                    Continue\n                  </button>\n                </form>\n              </div>\n            )}\n          </div>\n        </div>\n      )}\n    </div>\n  );\n}\n
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* MAIN 3-COLUMN FLEXBOARD VIEWPORT */
+        <div className="flex-1 flex overflow-hidden w-full relative">
+          
+          {/* COLUMN 1: LEFT SIDEBAR MESSAGES LIST (350px) */}
+          <section 
+            className={`border-r flex flex-col flex-shrink-0 transition-all duration-300 ${
+              isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+            } ${
+              activeContact 
+                ? "hidden md:flex w-[350px] h-full" 
+                : "w-full md:w-[350px] h-full"
+            }`}
+          >
+            <div className="p-4 flex flex-col gap-3 border-b border-slate-100/10">
+              <div className={`w-full h-[36px] border rounded-lg flex items-center px-3 gap-2 ${
+                isDark ? "bg-slate-950 border-slate-850" : "bg-slate-50 border-slate-200"
+              }`}>
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent text-sm w-full outline-none text-slate-400 placeholder-slate-500 font-normal"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center text-xs text-slate-450 font-bold tracking-wide">
+                <div className="flex items-center gap-1.5 cursor-pointer hover:text-slate-650">
+                  <span>Latest First</span>
+                  <svg className="w-3 h-3 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </div>
+                
+                <button 
+                  onClick={handleLogout}
+                  className="w-6 h-6 rounded-full bg-sky-500 hover:bg-sky-400 text-white flex items-center justify-center active:scale-90 transition-transform shadow-md"
+                  title="Logout / Exit Session"
+                >
+                  <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+              {filteredContacts.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs">No contacts found</div>
+              ) : (
+                filteredContacts.map((user) => {
+                  const isOnline = onlineUsers[user.username] === "online";
+                  const isAway = onlineUsers[user.username] === "away";
+                  const isTyping = typingUsers[user.username];
+                  const isActive = activeContact?.username === user.username;
+                  const lastMsg = getLastMessage(user.username);
+                  
+                  const hasMockBadge = (user.username === "Paul Osmand" || user.username === "Edward Davis") && !lastMsg;
+
+                  return (
+                    <button
+                      key={user.username}
+                      onClick={() => setActiveContact(user)}
+                      className={`w-full p-3.5 flex items-center gap-3.5 rounded-xl hover-scale relative ${
+                        isActive
+                          ? isDark ? "bg-slate-800" : "bg-slate-100"
+                          : isDark ? "hover:bg-slate-800/40" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-[52px] h-[52px] rounded-full overflow-hidden p-[2.5px] ${
+                          isActive ? "insta-gradient-border" : isDark ? "border border-slate-800" : "border border-slate-200"
+                        }`}>
+                          <img 
+                            src={user.avatarUrl} 
+                            className={`w-full h-full rounded-full object-cover border ${
+                              isDark ? "border-slate-900" : "border-white"
+                            }`} 
+                          />
+                        </div>
+                        
+                        <span className={`absolute top-0.5 right-0.5 w-3 h-3 rounded-full border-2 ${
+                          isDark ? "border-slate-900" : "border-white"
+                        } ${
+                          isTyping ? "bg-amber-400 animate-pulse" :
+                          isOnline ? "bg-emerald-500 pulse-online" :
+                          isAway ? "bg-amber-500" : "bg-slate-400"
+                        }`} />
+                      </div>
+                      
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className={`text-[13.5px] font-bold tracking-wide truncate ${
+                            isDark ? "text-slate-200" : "text-slate-700"
+                          }`}>
+                            {user.username.toUpperCase()}
+                          </span>
+                          {lastMsg ? (
+                            <span className="text-[10px] text-slate-450 font-semibold">{lastMsg.time}</span>
+                          ) : (
+                            <span className="text-[10px] text-slate-450 font-medium">08:04 AM</span>
+                          )}
+                        </div>
+                        
+                        <p className="text-[11.5px] text-slate-500 truncate leading-snug">
+                          {isTyping ? (
+                            <span className="text-purple-500 font-bold animate-pulse">typing...</span>
+                          ) : lastMsg ? (
+                            lastMsg.text || "📷 Photo attachment"
+                          ) : (
+                            user.statusText || "Start DM"
+                          )}
+                        </p>
+                      </div>
+
+                      {hasMockBadge && (
+                        <span className="absolute right-4 w-4.5 h-4.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-[10px] font-black text-white flex items-center justify-center select-none shadow">
+                          1
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          {/* COLUMN 2: MIDDLE PANE - ACTIVE DIRECT MESSAGE STREAM */}
+          <main 
+            className={`flex-1 flex flex-col border-r transition-all duration-300 ${
+              isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
+            } ${
+              !activeContact 
+                ? "hidden md:flex h-full items-center justify-center text-center p-8" 
+                : "flex h-full"
+            }`}
+          >
+            {activeContact ? (
+              <>
+                {/* Active Chat Header */}
+                <header className={`h-[60px] px-6 border-b flex items-center justify-between flex-shrink-0 z-40 select-none ${
+                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setActiveContact(null)}
+                      className="md:hidden p-1.5 rounded-full text-slate-500 hover:text-slate-800 active:scale-95"
+                    >
+                      <svg className="w-5 h-5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                      </svg>
+                    </button>
+
+                    <div className="relative">
+                      <img
+                        src={activeContact.avatarUrl}
+                        alt={activeContact.username}
+                        className="w-9 h-9 rounded-full object-cover border border-slate-200"
+                      />
+                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white ${
+                        typingUsers[activeContact.username] ? "bg-amber-400 animate-pulse" :
+                        onlineUsers[activeContact.username] === "online" ? "bg-emerald-500" :
+                        onlineUsers[activeContact.username] === "away" ? "bg-amber-500" : "bg-slate-400"
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className={`text-sm font-bold tracking-wide ${isDark ? "text-slate-100" : "text-slate-800"}`}>{activeContact.username}</h3>
+                      <p className="text-[10px] text-slate-400 font-semibold tracking-wide">
+                        {typingUsers[activeContact.username] ? "typing..." : "Active now"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setIsDetailPaneOpen((prev) => !prev)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100/10 text-slate-400 hover:text-slate-700 transition-all active:scale-90 ${
+                      isDetailPaneOpen ? "bg-slate-100/10 text-slate-300" : ""
+                    }`}
+                  >
+                    <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                  </button>
+                </header>
+
+                {/* Message feeds stream */}
+                <div className={`flex-1 overflow-y-auto px-6 py-6 space-y-5 custom-scrollbar flex flex-col ${
+                  isDark ? "bg-slate-950" : "bg-white"
+                }`}>
+                  
+                  {/* Sync info banner */}
+                  <div className="w-full bg-indigo-50/5 border border-indigo-500/10 rounded-xl p-3 flex items-center justify-between text-xs text-indigo-400 gap-3 shadow-sm select-none animate-chat-bubble flex-shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                      </span>
+                      <span><b>Real-time Sync Active</b>: Open this site in another tab to chat live.</span>
+                    </div>
+                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider bg-indigo-500/10 px-2 py-0.5 rounded">Tab Sync</span>
+                  </div>
+
+                  {conversationMessages.map((msg) => {
+                    const isMe = msg.sender === currentUser.username;
+                    
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex w-full items-end gap-2.5 ${
+                          isMe ? "justify-end" : "justify-start"
+                        } ${msg.isNew ? "animate-chat-bubble" : ""}`}
+                      >
+                        {!isMe && (
+                          <img
+                            src={activeContact.avatarUrl}
+                            alt={activeContact.username}
+                            className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 select-none mb-1"
+                          />
+                        )}
+
+                        <div className="flex flex-col max-w-[70%]">
+                          <div
+                            className={`px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed shadow-sm break-words relative ${
+                              isMe
+                                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-sm bubble-shadow-me"
+                                : isDark 
+                                  ? "bg-slate-800 text-slate-100 rounded-bl-sm bubble-shadow-them"
+                                  : "bg-slate-100 text-slate-800 rounded-bl-sm bubble-shadow-them"
+                            }`}
+                          >
+                            {msg.text && <p className="font-normal">{msg.text}</p>}
+                            
+                            {msg.imageUrl && (
+                              <img
+                                src={msg.imageUrl}
+                                alt="Attachment"
+                                className="rounded-lg max-h-[220px] object-cover mt-1 select-none border border-slate-700/20"
+                              />
+                            )}
+
+                            <div className="flex items-center justify-end mt-1 text-[9px] font-semibold select-none">
+                              <span className={isMe ? "text-white/80" : "text-slate-400"}>{msg.time}</span>
+                              {isMe && msg.status && renderCheckmarks(msg.status)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {isMe && (
+                          <img
+                            src={currentUser.avatarUrl}
+                            alt={currentUser.username}
+                            className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 select-none mb-1"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* typing status indicator visual overlay */}
+                  {typingUsers[activeContact.username] && (
+                    <div className="flex w-full items-end gap-2.5 justify-start animate-chat-bubble">
+                      <img
+                        src={activeContact.avatarUrl}
+                        alt={activeContact.username}
+                        className="w-[28px] h-[28px] rounded-full object-cover border border-slate-200 flex-shrink-0 mb-1"
+                      />
+                      <div className={`px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5 shadow-sm ${
+                        isDark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-800"
+                      }`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-450 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Footer input box */}
+                <footer className={`p-4 border-t flex items-center gap-3 select-none flex-shrink-0 ${
+                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                }`}>
+                  <button 
+                    onClick={handleSendMockImage}
+                    title="Send photography media"
+                    className="p-1.5 rounded-full text-slate-500 hover:text-slate-850 hover:bg-slate-100/10 transition-all active:scale-90"
+                  >
+                    <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                  </button>
+
+                  {/* Emoji Picker Popover Wrapper */}
+                  <div className="relative" ref={emojiPickerRef}>
+                    <button 
+                      onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
+                      title="Insert emoji"
+                      className={`p-1.5 rounded-full hover:bg-slate-100/10 transition-all active:scale-90 ${
+                        isEmojiPickerOpen ? "text-sky-500 bg-slate-100/10" : "text-slate-500 hover:text-slate-850"
+                      }`}
+                    >
+                      <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+                      </svg>
+                    </button>
+
+                    {isEmojiPickerOpen && (
+                      <div className={`absolute bottom-[52px] left-0 w-[270px] border rounded-2xl p-3 shadow-xl flex flex-col z-50 animate-chat-bubble select-none ${
+                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                      }`}>
+                        <div className="flex justify-between items-center border-b border-slate-100/10 pb-2 mb-2">
+                          {EMOJI_CATEGORIES.map((cat) => (
+                            <button
+                              type="button"
+                              key={cat.name}
+                              onClick={() => setActiveEmojiCategory(cat.name)}
+                              title={cat.name}
+                              className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all active:scale-95 ${
+                                activeEmojiCategory === cat.name ? "bg-slate-100/10 text-slate-300" : "opacity-50 hover:opacity-100"
+                              }`}
+                            >
+                              {cat.icon}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1.5 overflow-y-auto max-h-[140px] custom-scrollbar p-1">
+                          {EMOJI_CATEGORIES.find((c) => c.name === activeEmojiCategory)?.list.map((emoji) => (
+                            <button
+                              type="button"
+                              key={emoji}
+                              onClick={() => setInputText((prev) => prev + emoji)}
+                              className="w-8 h-8 flex items-center justify-center text-[18px] hover:bg-slate-100/10 active:scale-90 rounded-lg transition-all"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={`flex-1 h-[44px] px-4 border transition-colors rounded-full flex items-center ${
+                    isDark ? "bg-slate-950 border-slate-800 focus-within:border-slate-700" : "bg-slate-50 border-slate-200 focus-within:border-slate-300"
+                  }`}>
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => {
+                        setInputText(e.target.value);
+                        handleUserTyping(e.target.value.length);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Message..."
+                      className={`bg-transparent text-sm w-full outline-none font-normal ${
+                        isDark ? "text-slate-100 placeholder-slate-600" : "text-slate-800 placeholder-slate-400"
+                      }`}
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setInputText("Listening...");
+                      setTimeout(() => setInputText("I'm skating tonight!"), 1500);
+                    }}
+                    className="p-1.5 rounded-full text-slate-500 hover:text-slate-850 hover:bg-slate-100/10 transition-all active:scale-90"
+                  >
+                    <svg className="w-6.5 h-6.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => handleSendMessage()}
+                    className={`w-[40px] h-[40px] rounded-full flex items-center justify-center transition-all ${
+                      inputText.trim()
+                        ? "insta-send-gradient hover:opacity-90 active:scale-90 text-white shadow-md"
+                        : "bg-slate-100/10 text-slate-550 cursor-not-allowed"
+                    }`}
+                    disabled={!inputText.trim()}
+                  >
+                    <svg className="w-[16px] h-[16px] rotate-45 -translate-x-[1px] stroke-[2.8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  </button>
+                </footer>
+              </>
+            ) : (
+              <div className={`flex-1 flex flex-col items-center justify-center text-center p-8 select-none ${
+                isDark ? "bg-slate-950" : "bg-slate-50"
+              }`}>
+                <div className={`w-20 h-20 rounded-full border flex items-center justify-center text-slate-400 mb-4 shadow-sm ${
+                  isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+                }`}>
+                  <svg className="w-10 h-10 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
+                </div>
+                <h2 className="text-[17px] font-bold text-slate-500 uppercase tracking-widest">Your Messages</h2>
+                <p className="text-[12px] text-slate-450 max-w-[240px] mt-2 leading-relaxed">
+                  Send private messages and media photos to a friend or group. Select a conversation to start.
+                </p>
+              </div>
+            )}
+          </main>
+
+          {/* COLUMN 3: RIGHT PANEL - CONTACT DETAIL INFO DISPLAY (320px) */}
+          {activeContact && isDetailPaneOpen && (
+            <aside 
+              className={`w-full lg:w-[320px] border-l flex flex-col items-center p-6 text-center select-none z-45 animate-chat-bubble absolute lg:static top-0 right-0 h-full lg:h-auto shadow-2xl lg:shadow-none ${
+                isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+              }`}
+            >
+              <button 
+                onClick={() => setIsDetailPaneOpen(false)}
+                className="lg:hidden absolute top-4 right-4 p-2 text-slate-450 hover:text-slate-800"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="relative mt-8 mb-5 select-none">
+                <div className="w-[120px] h-[120px] rounded-full overflow-hidden border border-slate-200 p-[3px] shadow-sm">
+                  <img
+                    src={activeContact.avatarUrl}
+                    alt={activeContact.username}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+              </div>
+
+              <h2 className={`text-[18px] font-black tracking-wide mb-0.5 ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                {activeContact.username.toUpperCase()}
+              </h2>
+              <p className={`text-[11px] font-extrabold tracking-widest uppercase mb-4 ${
+                theme === "dark" ? "text-slate-400" : "text-slate-700"
+              }`}>
+                {activeContact.category || "MEMBER"}
+              </p>
+
+              <p className={`text-[12px] leading-relaxed max-w-[240px] mb-6 font-medium ${
+                theme === "dark" ? "text-slate-400" : "text-slate-700"
+              }`}>
+                {activeContact.bio || "No profile biography available yet."}
+              </p>
+
+              <button className="px-5 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 font-bold text-white active:scale-95 transition-all text-xs tracking-wide shadow-md">
+                VIEW PROFILE
+              </button>
+
+              <div className="flex gap-4 mt-auto pt-8 select-none">
+                <button className={`w-[52px] h-[52px] rounded-full text-slate-500 flex items-center justify-center active:scale-90 transition-all shadow-sm ${
+                  isDark ? "bg-slate-850 hover:bg-slate-800" : "bg-slate-100 hover:bg-slate-200"
+                }`}>
+                  <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </button>
+                <button className={`w-[52px] h-[52px] rounded-full text-slate-500 flex items-center justify-center active:scale-90 transition-all shadow-sm ${
+                  isDark ? "bg-slate-850 hover:bg-slate-800" : "bg-slate-100 hover:bg-slate-200"
+                }`}>
+                  <svg className="w-5.5 h-5.5 stroke-[2.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.557-5.118-3.851-6.674-6.674l1.293-.97c.362-.272.528-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                  </svg>
+                </button>
+              </div>
+            </aside>
+          )}
+
+        </div>
+      )}
+
+      {isGoogleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className={`w-full max-w-[400px] mx-4 rounded-2xl shadow-2xl p-6 border transition-all ${
+            isDark 
+              ? "bg-slate-950 border-slate-800 text-slate-100" 
+              : "bg-white border-slate-200 text-slate-850"
+          }`}>
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="font-bold text-sm">Sign in with Google</span>
+              </div>
+              <button 
+                onClick={() => !isSigningInWithGoogle && setIsGoogleModalOpen(false)}
+                className={`p-1 rounded-full hover:bg-slate-100/10 cursor-pointer ${isSigningInWithGoogle ? "opacity-30 cursor-not-allowed" : ""}`}
+                disabled={isSigningInWithGoogle}
+              >
+                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {isSigningInWithGoogle ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-4">
+                <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Signing in...</p>
+                  <p className="text-xs text-slate-400 mt-1">Connecting to Google services</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-450">Choose a Google Account to continue to ChatGroup.</p>
+                
+                {/* Mock Accounts List */}
+                <div className="space-y-2">
+                  {[
+                    {
+                      name: "Krupali Bathani",
+                      email: "krupali.bathani@gmail.com",
+                      avatar: PRESET_AVATARS[0]
+                    },
+                    {
+                      name: "Om Gadhiya",
+                      email: "omgadhiya97@gmail.com",
+                      avatar: "/om_gadhiya.png"
+                    },
+                    {
+                      name: "David Williams",
+                      email: "david.williams@gmail.com",
+                      avatar: "/david_williams.png"
+                    }
+                  ].map((acc, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleGoogleSignIn(acc.name, acc.email, acc.avatar)}
+                      className={`w-full p-3 border rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer text-left ${
+                        isDark 
+                          ? "border-slate-800 hover:bg-slate-900 bg-slate-950" 
+                          : "border-slate-200 hover:bg-slate-50 bg-white"
+                      }`}
+                    >
+                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-slate-200">
+                        {acc.avatar.startsWith("/") ? (
+                          <img src={acc.avatar} className="w-full h-full object-cover" onError={(e) => {
+                            e.currentTarget.src = PRESET_AVATARS[index];
+                          }} />
+                        ) : (
+                          <img src={acc.avatar} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate">{acc.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{acc.email}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Separator / Custom Email option */}
+                <div className="flex items-center my-3 w-full">
+                  <div className={`flex-grow border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}></div>
+                  <span className={`mx-3 text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-600" : "text-slate-400"}`}>or</span>
+                  <div className={`flex-grow border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}></div>
+                </div>
+
+                {/* Custom Google Account Input */}
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!googleCustomEmail.trim()) return;
+                    const email = googleCustomEmail.trim().toLowerCase();
+                    const prefix = email.split("@")[0];
+                    const formattedName = prefix
+                      .split(/[\._\-]+/)
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(" ");
+                    const randomAvatar = PRESET_AVATARS[Math.floor(Math.random() * PRESET_AVATARS.length)];
+                    handleGoogleSignIn(formattedName, email, randomAvatar);
+                  }}
+                  className="space-y-3"
+                >
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Use custom email</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. yourname@gmail.com"
+                      value={googleCustomEmail}
+                      onChange={(e) => setGoogleCustomEmail(e.target.value)}
+                      className={`w-full px-4 py-2 border rounded-xl outline-none text-xs font-semibold shadow-sm transition-colors ${
+                        isDark 
+                          ? "bg-slate-900 border-slate-800 text-white placeholder-slate-650 focus:border-sky-500/50" 
+                          : "bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-sky-500/50"
+                      }`}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 font-bold text-white rounded-xl shadow-md transition-all text-xs active:scale-95 cursor-pointer dark:bg-sky-600 dark:hover:bg-sky-500"
+                  >
+                    Continue
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
