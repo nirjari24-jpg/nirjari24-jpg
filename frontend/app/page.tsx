@@ -235,6 +235,7 @@ export default function Home() {
   const socketRef = useRef<any>(null);
   const tempMessageIdRef = useRef<string | null>(null);
   const activeContactRef = useRef<User | null>(null);
+  const chatImageInputRef = useRef<HTMLInputElement>(null);
 
   // Message Requests state
   const [messageRequests, setMessageRequests] = useState<MessageRequest[]>([]);
@@ -1405,6 +1406,50 @@ export default function Home() {
     ];
     const chosenImage = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
     handleSendMessage("", chosenImage);
+  };
+
+  const handleChatImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setToast("Compressing & sending image... 📤");
+    setTimeout(() => setToast(null), 3000);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const MAX_SIZE = 800;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const base64Data = canvas.toDataURL("image/jpeg", 0.75);
+          handleSendMessage("", base64Data);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   function handleLogout() {
@@ -2871,13 +2916,21 @@ export default function Home() {
                       isDark ? "bg-slate-905/90 border-slate-800/80 backdrop-blur-md shadow-black/20" 
                         : "bg-white/95 border-slate-200 backdrop-blur-md shadow-slate-200/50"
                     }`}>
+                      <input
+                        type="file"
+                        ref={chatImageInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleChatImageChange}
+                      />
                       <button 
-                        onClick={handleSendMockImage}
-                        title="Send photography media"
+                        onClick={() => chatImageInputRef.current?.click()}
+                        title="Send photo from camera or files"
                         className="p-1.5 rounded-full text-slate-500 hover:text-sky-500 hover:bg-slate-100/10 transition-all active:scale-90 cursor-pointer"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15a2.25 2.25 0 0 0 2.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM18 10.5h.008v.008H18V10.5Z" />
                         </svg>
                       </button>
 
