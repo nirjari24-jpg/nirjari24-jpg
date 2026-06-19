@@ -133,8 +133,6 @@ body {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
-<<<<<<< HEAD:frontend/app/globals.css
-=======
 
 /* Ensure active/accent state colors are preserved by overriding general color rules */
 .light-theme .text-cyan-400 { color: #22d3ee !important; }
@@ -198,4 +196,3 @@ body {
 .black-theme textarea::placeholder {
   color: #525252 !important;
 }
->>>>>>> 7f6b562e83f662524d5f81e9ff2d1da16bec9a9a:chatgroup/app/globals.css

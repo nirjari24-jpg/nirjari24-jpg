@@ -1209,7 +1209,7 @@ export default function Home() {
     })
     .catch(err => {
       console.error("Login error:", err);
-      setAuthError(err.message);
+      setAuthError(`${err.message} (Target Server: ${API_BASE})`);
     });
   };
 
@@ -1263,7 +1263,7 @@ export default function Home() {
     })
     .catch(err => {
       console.error("Registration error:", err);
-      setAuthError(err.message);
+      setAuthError(`${err.message} (Target Server: ${API_BASE})`);
     });
   };
 
@@ -2317,12 +2317,12 @@ export default function Home() {
               /* LOGIN FORM */
               <form onSubmit={handleLogin} className="w-full flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Email Address</label>
+                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Username or Email Address</label>
                   <input
-                    type="email"
+                    type="text"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="e.g. ana@chatgroup.com"
+                    placeholder="e.g. paul or paul@chatgroup.com"
                     className={`w-full px-4 py-3 border rounded-2xl outline-none text-sm font-medium transition-all focus:ring-4 ${
                       theme === "dark" 
                         ? "bg-slate-900/50 border-slate-800 text-white placeholder-slate-500 focus:border-sky-500 focus:ring-sky-500/10" 
