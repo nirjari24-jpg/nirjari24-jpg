@@ -94,12 +94,24 @@ const seedDatabase = async () => {
       await MessageRequest.deleteMany({}); // Also clear requests
     }
 
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('Seeding mock contacts with secure credentials into MongoDB...');
-      await User.insertMany(MOCK_CONTACTS);
-      console.log('Mock contacts successfully seeded!');
+    console.log('Synchronizing mock contacts with secure credentials into MongoDB...');
+    for (const contact of MOCK_CONTACTS) {
+      await User.findOneAndUpdate(
+        { email: contact.email.toLowerCase() },
+        {
+          $set: {
+            username: contact.username,
+            password: contact.password,
+            avatarUrl: contact.avatarUrl,
+            category: contact.category,
+            bio: contact.bio,
+            statusText: contact.statusText
+          }
+        },
+        { upsert: true, new: true }
+      );
     }
+    console.log('Mock contacts successfully synchronized!');
 
     // Seed message requests between mock contacts so they can message immediately
     const requestCount = await MessageRequest.countDocuments();
@@ -363,13 +375,21 @@ app.post('/api/users/login', async (req: Request, res: Response): Promise<any> =
   }
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const loginIdentifier = email.trim();
+    const user = await User.findOne({
+      $or: [
+        { email: loginIdentifier.toLowerCase() },
+        { username: { $regex: new RegExp(`^${loginIdentifier}$`, 'i') } }
+      ]
+    });
     if (!user) {
+      console.log(`[AUTH] Failed login: User not found for identifier "${loginIdentifier}"`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
+      console.log(`[AUTH] Failed login: Incorrect password "${password}" for user "${user.username}" (email: ${user.email})`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
