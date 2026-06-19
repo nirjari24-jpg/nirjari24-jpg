@@ -811,27 +811,52 @@ export default function Home() {
       try {
         const parsed = JSON.parse(savedUser);
         if (parsed && parsed.username) {
+          // Restore user immediately from cache — no network needed
           setCurrentUser(parsed);
-          
-          // Sync settings dashboard states with current user profile
           setName(parsed.username);
           setUsername(parsed.username);
           setBio(parsed.bio || "Available to chat in real-time.");
           setAvatar(parsed.avatarUrl);
+          if (parsed.email) setEmail(parsed.email);
 
-          // Validate cached session on initial mount/reconnect
+          // Validate session: if backend restarted (in-memory DB wiped),
+          // silently re-register the user so they stay logged in without interruption.
           fetch(`${API_BASE}/api/users`)
             .then(res => res.json())
             .then(users => {
               if (users && Array.isArray(users)) {
                 const exists = users.some(u => u && u.username && u.username.toLowerCase() === parsed.username.toLowerCase());
                 if (!exists) {
-                  console.warn("Stale session detected: user not found in database. Logging out.");
-                  handleLogout();
+                  // User not found in DB (backend was restarted). Re-register silently.
+                  console.log("Session restored from cache. Re-syncing user to backend (DB was reset)...");
+                  const reRegBody = {
+                    username: parsed.username,
+                    email: parsed.email || `${parsed.username.toLowerCase().replace(/\s+/g, "")}@chatgroup.com`,
+                    password: "chatgroup_auto_restore_" + parsed.username,
+                    avatarUrl: parsed.avatarUrl,
+                    category: parsed.category || "MEMBER",
+                    bio: parsed.bio || "Joined ChatGroup."
+                  };
+                  fetch(`${API_BASE}/api/users/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reRegBody)
+                  })
+                  .then(r => r.json())
+                  .then(newUser => {
+                    if (newUser && newUser.username) {
+                      // Update localStorage with fresh backend data
+                      const merged = { ...parsed, ...newUser };
+                      localStorage.setItem("chatgroup_current_user", JSON.stringify(merged));
+                      setCurrentUser(merged);
+                      console.log("User silently re-registered after backend restart:", merged.username);
+                    }
+                  })
+                  .catch(err => console.warn("Silent re-register failed (non-critical):", err));
                 }
               }
             })
-            .catch(err => console.warn("Failed to validate cached user:", err));
+            .catch(err => console.warn("Failed to validate cached user (non-critical):", err));
         } else {
           localStorage.removeItem("chatgroup_current_user");
         }
