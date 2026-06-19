@@ -2530,7 +2530,7 @@ export default function Home() {
                   <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Username</label>
                   <input
                     type="text"
-                    maxLength={18}
+                    maxLength={30}
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
                     placeholder="e.g. Ann"
