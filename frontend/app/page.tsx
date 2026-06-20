@@ -248,6 +248,13 @@ export default function Home() {
   const activeContactRef = useRef<User | null>(null);
   const chatImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Live Camera Snap states & refs
+  const [isLiveCameraOpen, setIsLiveCameraOpen] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [liveCameraError, setLiveCameraError] = useState<string | null>(null);
+  const [liveCameraStream, setLiveCameraStream] = useState<MediaStream | null>(null);
+  const liveCameraVideoRef = useRef<HTMLVideoElement>(null);
+
   // Message Requests state
   const [messageRequests, setMessageRequests] = useState<MessageRequest[]>([]);
 
@@ -957,6 +964,12 @@ export default function Home() {
             recipient: currentUser.username
           })
         }).catch(err => console.warn("Error marking message as read:", err));
+
+        // Emit socket read update instantly
+        socket.emit("readMessages", {
+          sender: newMsg.sender,
+          recipient: currentUser.username
+        });
       } else {
         playSound("receive");
       }
@@ -975,6 +988,31 @@ export default function Home() {
         }
       });
       setTimeout(() => scrollToBottom("smooth"), 50);
+    });
+
+    // Listen for read receipts from other users
+    socket.on("messagesRead", (data: { sender: string; recipient: string }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.sender.toLowerCase() === data.sender.toLowerCase() &&
+          msg.recipient.toLowerCase() === data.recipient.toLowerCase()
+            ? { ...msg, status: "read" }
+            : msg
+        )
+      );
+    });
+
+    // Listen for delivery updates
+    socket.on("messagesDelivered", (data: { sender: string; recipient: string }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.sender.toLowerCase() === data.sender.toLowerCase() &&
+          msg.recipient.toLowerCase() === data.recipient.toLowerCase() &&
+          msg.status === "sent"
+            ? { ...msg, status: "delivered" }
+            : msg
+        )
+      );
     });
 
     // Listen for typing indicator
@@ -1099,6 +1137,14 @@ export default function Home() {
         })
       })
       .catch(err => console.warn("Error marking messages as read:", err));
+
+      // Emit read status through WebSockets
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit("readMessages", {
+          sender: activeContact.username,
+          recipient: currentUser.username
+        });
+      }
     }
   }, [activeContact, currentUser, API_BASE]);
 
@@ -1553,6 +1599,77 @@ export default function Home() {
     e.target.value = "";
   };
 
+  const startLiveCamera = async () => {
+    setLiveCameraError(null);
+    setCapturedPhoto(null);
+    setIsLiveCameraOpen(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: "user" },
+        audio: false
+      });
+      setLiveCameraStream(stream);
+      setTimeout(() => {
+        if (liveCameraVideoRef.current) {
+          liveCameraVideoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error("Error accessing camera:", err);
+      setLiveCameraError("Could not access your camera. Please ensure permissions are granted.");
+    }
+  };
+
+  const stopLiveCamera = () => {
+    if (liveCameraStream) {
+      liveCameraStream.getTracks().forEach((track) => track.stop());
+      setLiveCameraStream(null);
+    }
+    setIsLiveCameraOpen(false);
+    setCapturedPhoto(null);
+    setLiveCameraError(null);
+  };
+
+  const captureLivePhoto = () => {
+    if (liveCameraVideoRef.current) {
+      const video = liveCameraVideoRef.current;
+      const canvas = document.createElement("canvas");
+      const MAX_SIZE = 800;
+      let width = video.videoWidth || 640;
+      let height = video.videoHeight || 480;
+
+      if (width > height) {
+        if (width > MAX_SIZE) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        }
+      } else {
+        if (height > MAX_SIZE) {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+        setCapturedPhoto(dataUrl);
+      }
+    }
+  };
+
+  const sendLivePhoto = () => {
+    if (capturedPhoto) {
+      handleSendMessage("", capturedPhoto);
+      stopLiveCamera();
+    }
+  };
+
   function handleLogout() {
     setCurrentUser(null);
     setActiveContact(null);
@@ -1596,18 +1713,14 @@ export default function Home() {
   };
 
   const renderCheckmarks = (status: "sent" | "delivered" | "read") => {
-    const color = status === "read" ? "text-emerald-500" : "text-slate-400";
+    if (status === "sent") {
+      return (
+        <Check className="w-3.5 h-3.5 inline ml-1 text-slate-400 transition-colors duration-300" strokeWidth={3} />
+      );
+    }
+    const color = status === "read" ? "text-sky-400" : "text-slate-400";
     return (
-      <svg
-        className={`w-3.5 h-3.5 inline ml-1 ${color} transition-colors duration-300`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25l6-6 4.5-4.5" />
-      </svg>
+      <CheckCheck className={`w-3.5 h-3.5 inline ml-1 ${color} transition-colors duration-300`} strokeWidth={3} />
     );
   };
 
@@ -3007,9 +3120,21 @@ export default function Home() {
                         className="hidden"
                         onChange={handleChatImageChange}
                       />
+                      {/* Photo Gallery Upload Button */}
                       <button 
                         onClick={() => chatImageInputRef.current?.click()}
-                        title="Send photo from camera or files"
+                        title="Upload photo from device storage"
+                        className="p-1.5 rounded-full text-slate-500 hover:text-sky-500 hover:bg-slate-100/10 transition-all active:scale-90 cursor-pointer"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                      </button>
+
+                      {/* Live Snap Web Camera Button */}
+                      <button 
+                        onClick={startLiveCamera}
+                        title="Click photo live"
                         className="p-1.5 rounded-full text-slate-500 hover:text-sky-500 hover:bg-slate-100/10 transition-all active:scale-90 cursor-pointer"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -3557,6 +3682,90 @@ export default function Home() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Live Camera Snapshot Modal Overlay */}
+      {isLiveCameraOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4 select-none animate-fade-in">
+          <div className={`w-full max-w-lg rounded-[28px] border overflow-hidden p-6 flex flex-col items-center gap-5 shadow-2xl ${
+            isDark ? "bg-[#0b0b0d] border-slate-900" : "bg-white border-slate-200"
+          }`}>
+            <div className="w-full flex justify-between items-center pb-2 border-b border-slate-100/10">
+              <h3 className={`text-base font-extrabold tracking-tight ${isDark ? "text-slate-100" : "text-slate-800"}`}>
+                Live Snapshot Camera
+              </h3>
+              <button 
+                onClick={stopLiveCamera}
+                className="text-slate-500 hover:text-rose-500 hover:scale-110 active:scale-95 transition-all p-1 cursor-pointer"
+                title="Close camera"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {liveCameraError ? (
+              <div className="w-full py-12 flex flex-col items-center justify-center text-center gap-3">
+                <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-xs font-bold text-rose-500">{liveCameraError}</p>
+                <button
+                  onClick={startLiveCamera}
+                  className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Retry Access
+                </button>
+              </div>
+            ) : capturedPhoto ? (
+              <div className="w-full flex flex-col items-center gap-4">
+                <div className="w-full aspect-video rounded-2xl overflow-hidden border border-slate-100/10 shadow bg-black flex items-center justify-center">
+                  <img src={capturedPhoto} alt="Captured snapshot" className="w-full h-full object-contain" />
+                </div>
+                <div className="flex gap-4 w-full">
+                  <button 
+                    onClick={() => setCapturedPhoto(null)}
+                    className={`flex-1 py-3 border rounded-xl font-extrabold text-xs active:scale-95 transition-all cursor-pointer ${
+                      isDark ? "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-850" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    Retake
+                  </button>
+                  <button 
+                    onClick={sendLivePhoto}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-extrabold text-xs rounded-xl active:scale-95 transition-all cursor-pointer shadow-lg shadow-emerald-500/15"
+                  >
+                    Send Photo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full flex flex-col items-center gap-4">
+                <div className="w-full aspect-video rounded-2xl overflow-hidden border border-slate-100/10 bg-black shadow relative">
+                  <video 
+                    ref={liveCameraVideoRef}
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Overlay camera circle guide */}
+                  <div className="absolute inset-0 border border-white/5 flex items-center justify-center pointer-events-none">
+                    <div className="w-48 h-48 rounded-full border border-white/10" />
+                  </div>
+                </div>
+                <button 
+                  onClick={captureLivePhoto}
+                  className="w-14 h-14 rounded-full border-4 border-slate-350 hover:border-white bg-rose-600 active:scale-90 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+                  title="Snap photo"
+                >
+                  <div className="w-7 h-7 rounded-full bg-white" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
