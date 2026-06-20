@@ -145,7 +145,7 @@ export default function Home() {
       ? `${window.location.protocol}//${window.location.hostname}:5000`
       : "http://localhost:5000");
 
-  function fetchUsers(loggedInUser?: User | null) {
+  function fetchUsers(loggedInUser?: User | null, autoSelectOnDesktop = false) {
     const userToExclude = loggedInUser !== undefined ? loggedInUser : currentUser;
     fetch(`${API_BASE}/api/users`)
       .then(res => res.json())
@@ -156,14 +156,18 @@ export default function Home() {
             const otherUsers = userToExclude
               ? users.filter(u => u && u.username && u.username.toLowerCase() !== userToExclude.username.toLowerCase())
               : users;
-            if (!prev) {
+            
+            if (prev) {
+              const exists = otherUsers.find(u => u.username.toLowerCase() === prev.username.toLowerCase());
+              return exists || null;
+            }
+            
+            // Only auto-select on desktop on initial load / login / registration if explicitly allowed
+            if (autoSelectOnDesktop && typeof window !== 'undefined' && window.innerWidth >= 768) {
               return otherUsers.length > 0 ? otherUsers[0] : null;
             }
-            const exists = otherUsers.some(u => u.username === prev.username);
-            if (!exists) {
-              return otherUsers.length > 0 ? otherUsers[0] : null;
-            }
-            return prev;
+            
+            return null;
           });
         }
       })
@@ -230,7 +234,7 @@ export default function Home() {
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   // Right side panel toggles
-  const [isDetailPaneOpen, setIsDetailPaneOpen] = useState(true);
+  const [isDetailPaneOpen, setIsDetailPaneOpen] = useState(false);
 
   // Online statuses & typing indicator tracking
   const [onlineUsers, setOnlineUsers] = useState<Record<string, "online" | "away" | "offline">>({
@@ -902,7 +906,7 @@ export default function Home() {
       }
     }
 
-    fetchUsers(initialUser);
+    fetchUsers(initialUser, true);
     fetchRequests();
   }, [API_BASE]);
 
@@ -914,7 +918,7 @@ export default function Home() {
   // Poll users periodically
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchUsers(currentUser);
+      fetchUsers(currentUser, false);
       fetchRequests();
     }, 10000);
     return () => clearInterval(interval);
@@ -1346,7 +1350,7 @@ export default function Home() {
       setBio(user.bio || "");
       setEmail(user.email || "");
 
-      fetchUsers(user);
+      fetchUsers(user, true);
       setToast("Logged in successfully! 👋");
       setTimeout(() => setToast(null), 3000);
     })
@@ -1414,7 +1418,7 @@ export default function Home() {
       setBio(newUser.bio || "");
       setEmail(newUser.email || "");
 
-      fetchUsers(newUser);
+      fetchUsers(newUser, true);
       setRegUsername("");
       setRegEmail("");
       setRegPassword("");
@@ -1791,7 +1795,7 @@ export default function Home() {
         setCurrentUser(updatedUser);
         localStorage.setItem("chatgroup_current_user", JSON.stringify(updatedUser));
         
-        fetchUsers(updatedUser);
+        fetchUsers(updatedUser, false);
 
         if (channelRef.current) {
           channelRef.current.postMessage({
@@ -2859,7 +2863,12 @@ export default function Home() {
                   return (
                     <button
                       key={user.username}
-                      onClick={() => setActiveContact(user)}
+                      onClick={() => {
+                        setActiveContact(user);
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                          setIsDetailPaneOpen(false);
+                        }
+                      }}
                       className={`w-full p-3 flex items-center gap-3.5 rounded-2xl relative transition-all duration-300 hover:translate-x-1 ${
                         isActive
                           ? isDark ? "bg-slate-800/80 border border-slate-700/50 shadow-md shadow-black/10" 
